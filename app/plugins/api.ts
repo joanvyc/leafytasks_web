@@ -1,27 +1,27 @@
 import type { FetchContext } from 'ofetch'
 
 export default defineNuxtPlugin(() => {
-  const resolveBaseURL = (): string => {
-    const value = import.meta.server
-      ? process.env.INTERNAL_API_BASE
-      : useRuntimeConfig().public.apiBase
-    if (!value) {
-      throw new Error(
-        import.meta.server
-          ? 'INTERNAL_API_BASE env var is required at runtime'
-          : 'NUXT_PUBLIC_API_BASE env var is required at runtime'
-      )
-    }
-    console.log(value)
-    return value
+  const baseURL = import.meta.server
+    ? process.env.INTERNAL_API_BASE
+    : useRuntimeConfig().public.apiBase
+
+  console.log('[api plugin]', {
+    server: import.meta.server,
+    prerender: !!import.meta.prerender,
+    baseURL
+  })
+
+  if (!baseURL && !import.meta.prerender) {
+    throw new Error(
+      import.meta.server
+        ? 'INTERNAL_API_BASE env var is required at runtime'
+        : 'NUXT_PUBLIC_API_BASE env var is required at runtime'
+    )
   }
 
   const api = $fetch.create({
+    baseURL: baseURL ?? '',
     async onRequest({ options }) {
-      const baseURL = resolveBaseURL()
-      console.log('[api plugin]', { server: import.meta.server, baseURL })
-      options.baseURL = baseURL
-
       const { getToken } = useAuth()
       const token = await getToken.value()
       if (!token) return
