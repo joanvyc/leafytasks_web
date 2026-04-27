@@ -12,6 +12,7 @@ export default defineNuxtPlugin(() => {
           : 'NUXT_PUBLIC_API_BASE env var is required at runtime'
       )
     }
+    console.log(value)
     return value
   }
 
