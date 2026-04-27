@@ -8,6 +8,6 @@ const isProtectedRoute = createRouteMatcher([
 
 export default clerkMiddleware((event) => {
   if (isProtectedRoute(event) && !event.context.auth.userId) {
-    return sendRedirect(event, '/login')
+    return sendRedirect(event, '/')
   }
 })

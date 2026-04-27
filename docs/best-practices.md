@@ -69,7 +69,7 @@ Nuxt internals (Nitro renderer, devtools, modules) call `$fetch` against your ow
 
 ## Route protection
 
-Server middleware at `server/middleware/clerk.ts` gates `/dashboard(.*)`, `/projects(.*)`, and `/users(.*)` and redirects unauthenticated requests to `/login`. To add a new protected section, add its prefix to the `createRouteMatcher` list there. The landing page (`/`) and `/login` are public.
+Server middleware at `server/middleware/clerk.ts` gates `/dashboard(.*)`, `/projects(.*)`, and `/users(.*)` and redirects unauthenticated requests to `/`. To add a new protected section, add its prefix to the `createRouteMatcher` list there. The landing page (`/`) and `/login` are public.
 
 ## Routing (Nuxt 4 `app/` directory)
 
