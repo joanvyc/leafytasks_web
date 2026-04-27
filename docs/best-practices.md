@@ -22,13 +22,18 @@ They share a single `ofetch` instance defined in `app/plugins/api.ts` and expose
 | Mutations (POST/PATCH/DELETE) inside event handlers | `$apiFetch` | One-shot, returns a Promise, throws on error |
 | Refetching after a mutation | `refresh()` from the original `useApiFetch` | Reuses the cache key |
 
+### Always set `method` explicitly
+
+Every call must pass `method` — `'GET'` for reads, `'POST'` / `'PATCH'` / `'PUT'` / `'DELETE'` for writes. `ofetch` defaults to GET, but we want the method to be visible at the call site, both for readability and so a future edit can't silently change semantics by adding a `body`.
+
 ### Examples
 
 **Loading data:**
 
 ```ts
 const { data: project, error } = await useApiFetch<Project>(
-  () => `/api/projects/${route.params.url_name}`
+  () => `/api/projects/${route.params.url_name}`,
+  { method: 'GET' }
 )
 ```
 
@@ -52,6 +57,15 @@ async function createTask(payload: NewTask) {
 }
 ```
 
+### About OPTIONS requests in backend logs
+
+The `OPTIONS` requests you see in API logs are CORS preflights, not requests we sent. The browser sends one automatically before any cross-origin call carrying `Authorization` or a JSON body — so every authenticated call here triggers one. The actual GET/POST follows immediately. To reduce them:
+
+- The API must respond to `OPTIONS` with `Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers: Authorization, Content-Type`, and ideally `Access-Control-Max-Age` so the browser caches the preflight.
+- Or serve the API on the same origin as the frontend (e.g. via a Nuxt `routeRules` proxy), and CORS — and the preflights — go away.
+
+Changing the client method does not eliminate preflights.
+
 **Why not just override `$fetch` and `useFetch` globally?**
 Nuxt internals (Nitro renderer, devtools, modules) call `$fetch` against your own server routes — overriding it globally would silently break them. The Nuxt-recommended pattern is a custom `ofetch` instance + a thin composable, which is what this project uses.
 
@@ -62,10 +76,11 @@ Nuxt internals (Nitro renderer, devtools, modules) call `$fetch` against your ow
 ### Adding a new API call — checklist
 
 1. Use `useApiFetch` or `$apiFetch` — never bare `useFetch`/`$fetch`.
-2. Type the response: `useApiFetch<Project>(...)`. Add the type to `app/types/api.ts` if it's new.
-3. For data loading, prefer `() => '/api/...'` over `'/api/...'` so the URL stays reactive.
-4. Don't add manual auth headers — the plugin handles that.
-5. Don't add manual error toasts — the plugin handles that. Only catch errors when you need UI-specific recovery.
+2. **Always pass `method` explicitly** (`'GET'`, `'POST'`, `'PATCH'`, `'PUT'`, `'DELETE'`).
+3. Type the response: `useApiFetch<Project>(...)`. Add the type to `app/types/api.ts` if it's new.
+4. For data loading, prefer `() => '/api/...'` over `'/api/...'` so the URL stays reactive.
+5. Don't add manual auth headers — the plugin handles that.
+6. Don't add manual error toasts — the plugin handles that. Only catch errors when you need UI-specific recovery.
 
 ## Route protection
 

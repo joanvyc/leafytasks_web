@@ -5,7 +5,8 @@ const route = useRoute()
 const url_name = route.params.url_name as string
 
 const { data: project, error: projectError } = await useApiFetch<Project>(
-  `/api/projects/${url_name}`
+  `/api/projects/${url_name}`,
+  { method: 'GET' }
 )
 if (projectError.value || !project.value) {
   throw createError({
@@ -18,7 +19,7 @@ if (projectError.value || !project.value) {
 const recursive = ref(false)
 const { data: updates } = await useApiFetch<StatusUpdate[]>(
   `/api/projects/${url_name}/status`,
-  { query: { recursive } }
+  { method: 'GET', query: { recursive } }
 )
 
 type BadgeColor = 'error' | 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'neutral'

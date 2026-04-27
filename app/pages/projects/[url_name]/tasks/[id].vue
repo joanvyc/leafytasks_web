@@ -6,7 +6,8 @@ const url_name = route.params.url_name as string
 const taskId = route.params.id as string
 
 const { data: task, error: taskError } = await useApiFetch<Task>(
-  `/api/projects/${url_name}/tasks/${taskId}`
+  `/api/projects/${url_name}/tasks/${taskId}`,
+  { method: 'GET' }
 )
 if (taskError.value || !task.value) {
   throw createError({
@@ -19,13 +20,13 @@ if (taskError.value || !task.value) {
 const recursive = ref(false)
 const { data: status_updates } = await useApiFetch<StatusUpdate[]>(
   `/api/projects/${url_name}/tasks/${taskId}/status`,
-  { query: { recursive } }
+  { method: 'GET', query: { recursive } }
 )
 
 const dependencySearch = ref('')
 const { data: dependencyCandidates } = await useApiFetch<DependableCandidate[]>(
   `/api/projects/${url_name}/tasks/${taskId}/dependable`,
-  { query: { q: dependencySearch }, default: () => [] }
+  { method: 'GET', query: { q: dependencySearch }, default: () => [] }
 )
 
 type BadgeColor = 'error' | 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'neutral'

@@ -43,11 +43,11 @@ const leafsUrl = props.taskId
 
 const { data: subtasks, refresh: refreshSubtasks } = await useApiFetch<TaskSummary[]>(
   subtasksUrl,
-  { default: () => [] }
+  { method: 'GET', default: () => [] }
 )
 const { data: leafs } = await useApiFetch<TaskSummary[]>(
   leafsUrl,
-  { default: () => [] }
+  { method: 'GET', default: () => [] }
 )
 
 function newTaskPrompt(id: string, link_as: LinkAs) {
