@@ -8,16 +8,9 @@ export default defineNuxtConfig({
   ],
 
   runtimeConfig: {
-    internalApiBase:
-      process.env.INTERNAL_API_BASE ??
-      process.env.PUBLIC_API_BASE   ??
-      "https://api.leafytasks.com",
-
     public: {
-      apiBase:
-        process.env.PUBLIC_API_BASE ??
-        "https://api.leafytasks.com",
-    },
+      apiBase: ''
+    }
   },
 
   devtools: {
