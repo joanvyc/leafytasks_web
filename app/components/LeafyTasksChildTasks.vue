@@ -69,32 +69,32 @@ function clearNewTask() {
 }
 
 async function createNewTask(): Promise<CreatedTask | null | undefined> {
-  const { data: created_task, error } = await useFetch<CreatedTask>('/api/tasks/new', {
-    method: 'POST',
-    body: {
-      title: new_task.taskTitle,
-      description: new_task.description,
-      parent_id: new_task.link_as === 'parent'
-        ? new_task.id
-        : null,
-      dependencies: new_task.link_as === 'followup'
-        ? [new_task.id]
-        : []
-    }
-  })
+  try {
+    const created_task = await $apiFetch<CreatedTask>('/api/tasks/new', {
+      method: 'POST',
+      body: {
+        title: new_task.taskTitle,
+        description: new_task.description,
+        parent_id: new_task.link_as === 'parent'
+          ? new_task.id
+          : null,
+        dependencies: new_task.link_as === 'followup'
+          ? [new_task.id]
+          : []
+      }
+    })
 
-  if (error.value) {
+    await refreshSubtasks()
+    clearNewTask()
+    return created_task
+  } catch (err) {
     toast.add({
       title: 'Error: Creating task',
-      description: error.value?.message
+      description: (err as Error)?.message
     })
     clearNewTask()
     return null
   }
-
-  await refreshSubtasks()
-  clearNewTask()
-  return created_task.value
 }
 
 async function handleSubmit() {
