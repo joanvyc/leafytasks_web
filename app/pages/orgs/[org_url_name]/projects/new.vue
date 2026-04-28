@@ -10,6 +10,8 @@ interface NewProjectForm {
 }
 
 const toast = useToast()
+const route = useRoute()
+const org_url_name = route.params.org_url_name as string
 
 const form = reactive<NewProjectForm>({
   title: '',
@@ -64,7 +66,7 @@ function validate(state: NewProjectForm): FormError[] {
 
 async function handleSubmit(_event: FormSubmitEvent<NewProjectForm>) {
   try {
-    const created = await $apiFetch<{ url_name: string }>('/api/projects/new', {
+    const created = await $apiFetch<{ url_name: string }>(`/api/orgs/${org_url_name}/projects/new`, {
       method: 'POST',
       body: {
         title: form.title.trim(),
@@ -73,7 +75,7 @@ async function handleSubmit(_event: FormSubmitEvent<NewProjectForm>) {
         visibility: form.visibility
       }
     })
-    await navigateTo(`/projects/${created.url_name}`)
+    await navigateTo(`/orgs/${org_url_name}/projects/${created.url_name}`)
   } catch (err) {
     toast.add({
       title: 'Error: Creating project',
@@ -88,10 +90,10 @@ async function handleSubmit(_event: FormSubmitEvent<NewProjectForm>) {
   <div class="flex flex-col gap-4">
     <div class="flex justify-between items-center">
       <ULink
-        to="/dashboard"
+        :to="`/orgs/${org_url_name}`"
         class="text-sm text-neutral-500 hover:text-neutral-700"
       >
-        ← Dashboard
+        ← {{ org_url_name }}
       </ULink>
       <UBadge
         color="primary"
@@ -165,7 +167,7 @@ async function handleSubmit(_event: FormSubmitEvent<NewProjectForm>) {
           <UButton
             color="neutral"
             variant="subtle"
-            to="/dashboard"
+            :to="`/orgs/${org_url_name}`"
           >
             Cancel
           </UButton>

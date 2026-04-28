@@ -2,11 +2,14 @@
 import type { DependableCandidate, StatusUpdate, Task, TaskPriority } from '~/types/api'
 
 const route = useRoute()
+const org_url_name = route.params.org_url_name as string
 const url_name = route.params.url_name as string
 const taskId = route.params.id as string
 
+const taskBase = `/api/orgs/${org_url_name}/projects/${url_name}/tasks/${taskId}`
+
 const { data: task, error: taskError } = await useApiFetch<Task>(
-  `/api/projects/${url_name}/tasks/${taskId}`,
+  taskBase,
   { method: 'GET' }
 )
 if (taskError.value || !task.value) {
@@ -19,13 +22,13 @@ if (taskError.value || !task.value) {
 
 const recursive = ref(false)
 const { data: status_updates } = await useApiFetch<StatusUpdate[]>(
-  `/api/projects/${url_name}/tasks/${taskId}/status`,
+  `${taskBase}/status`,
   { method: 'GET', query: { recursive } }
 )
 
 const dependencySearch = ref('')
 const { data: dependencyCandidates } = await useApiFetch<DependableCandidate[]>(
-  `/api/projects/${url_name}/tasks/${taskId}/dependable`,
+  `${taskBase}/dependable`,
   { method: 'GET', query: { q: dependencySearch }, default: () => [] }
 )
 
@@ -46,7 +49,7 @@ const next_status_text = ref('')
     <div class="grid grid-cols-3 gap-4">
       <div class="col-span-2 flex justify-between items-center">
         <ULink
-          :to="`/projects/${url_name}`"
+          :to="`/orgs/${org_url_name}/projects/${url_name}`"
           class="text-sm text-neutral-500 hover:text-neutral-700"
         >
           ← {{ url_name }}
@@ -97,6 +100,7 @@ const next_status_text = ref('')
             </h2>
           </template>
           <LeafyTasksChildTasks
+            :org-url-name="org_url_name"
             :project-url-name="url_name"
             :task-id="taskId"
           />
@@ -218,7 +222,7 @@ const next_status_text = ref('')
               class="flex items-center gap-2 mb-1"
             >
               <LTStatus :status="dep.status" />
-              <ULink :to="`/projects/${url_name}/tasks/${dep.id}`">{{ dep.title }}</ULink>
+              <ULink :to="`/orgs/${org_url_name}/projects/${url_name}/tasks/${dep.id}`">{{ dep.title }}</ULink>
             </div>
             <UInput
               v-model="dependencySearch"

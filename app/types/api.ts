@@ -8,6 +8,12 @@ export interface User {
   avatar: string
 }
 
+export interface Org {
+  id: string
+  url_name: string
+  title: string
+}
+
 export interface Project {
   url_name: string
   title: string

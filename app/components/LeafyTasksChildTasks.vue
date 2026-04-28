@@ -2,6 +2,7 @@
 import type { TaskSummary } from '~/types/api'
 
 const props = defineProps({
+  orgUrlName: { type: String, required: true },
   projectUrlName: String,
   taskId: String
 })
@@ -34,12 +35,13 @@ interface CreatedTask {
   description?: string
 }
 
+const projectBase = `/api/orgs/${props.orgUrlName}/projects/${props.projectUrlName}`
 const subtasksUrl = props.taskId
-  ? `/api/projects/${props.projectUrlName}/tasks/${props.taskId}/childs`
-  : `/api/projects/${props.projectUrlName}/tasks`
+  ? `${projectBase}/tasks/${props.taskId}/childs`
+  : `${projectBase}/tasks`
 const leafsUrl = props.taskId
-  ? `/api/projects/${props.projectUrlName}/tasks/${props.taskId}/leafs`
-  : `/api/projects/${props.projectUrlName}/tasks?leafs=true`
+  ? `${projectBase}/tasks/${props.taskId}/leafs`
+  : `${projectBase}/tasks?leafs=true`
 
 const { data: subtasks, refresh: refreshSubtasks } = await useApiFetch<TaskSummary[]>(
   subtasksUrl,
@@ -70,7 +72,7 @@ function clearNewTask() {
 
 async function createNewTask(): Promise<CreatedTask | null | undefined> {
   try {
-    const created_task = await $apiFetch<CreatedTask>('/api/tasks/new', {
+    const created_task = await $apiFetch<CreatedTask>(`${projectBase}/tasks/new`, {
       method: 'POST',
       body: {
         title: new_task.taskTitle,
@@ -103,7 +105,7 @@ async function handleSubmit() {
 
 async function createNewTaskAndOpen() {
   const created = await createNewTask()
-  if (created) navigateTo(`/projects/${props.projectUrlName}/tasks/${created.id}`)
+  if (created) navigateTo(`/orgs/${props.orgUrlName}/projects/${props.projectUrlName}/tasks/${created.id}`)
 }
 
 const task_items = [
@@ -134,7 +136,7 @@ const task_items = [
         <div class="border border-[#AAAAAA] bg-[#FFFFFF] rounded-md mb-1">
           <div class="flex justify-between items-center">
             <div>
-              <ULink :to="`/projects/${props.projectUrlName}/tasks/${task.id}`">
+              <ULink :to="`/orgs/${props.orgUrlName}/projects/${props.projectUrlName}/tasks/${task.id}`">
                 <h2 class="m-2">{{ task.title }}</h2>
               </ULink>
             </div>
@@ -231,7 +233,7 @@ const task_items = [
         :key="task.id"
       >
         <div class="border border-[#AAAAAA] bg-[#FFFFFF] rounded-md mb-1">
-          <ULink :to="`/projects/${props.projectUrlName}/tasks/${task.id}`">
+          <ULink :to="`/orgs/${props.orgUrlName}/projects/${props.projectUrlName}/tasks/${task.id}`">
             <h2 class="m-2">{{ task.title }}</h2>
           </ULink>
         </div>

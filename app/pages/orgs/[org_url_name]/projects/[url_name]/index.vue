@@ -2,10 +2,11 @@
 import type { Project, ProjectStatus, StatusUpdate } from '~/types/api'
 
 const route = useRoute()
+const org_url_name = route.params.org_url_name as string
 const url_name = route.params.url_name as string
 
 const { data: project, error: projectError } = await useApiFetch<Project>(
-  `/api/projects/${url_name}`,
+  `/api/orgs/${org_url_name}/projects/${url_name}`,
   { method: 'GET' }
 )
 if (projectError.value || !project.value) {
@@ -18,7 +19,7 @@ if (projectError.value || !project.value) {
 
 const recursive = ref(false)
 const { data: updates } = await useApiFetch<StatusUpdate[]>(
-  `/api/projects/${url_name}/status`,
+  `/api/orgs/${org_url_name}/projects/${url_name}/status`,
   { method: 'GET', query: { recursive } }
 )
 
@@ -39,10 +40,10 @@ const next_update_text = ref('')
     <div class="grid grid-cols-3 gap-4">
       <div class="col-span-2 flex justify-between items-center">
         <ULink
-          to="/dashboard"
+          :to="`/orgs/${org_url_name}`"
           class="text-sm text-neutral-500 hover:text-neutral-700"
         >
-          ← Dashboard
+          ← {{ org_url_name }}
         </ULink>
         <UBadge
           color="primary"
@@ -84,7 +85,10 @@ const next_update_text = ref('')
               Tasks
             </h2>
           </template>
-          <LeafyTasksChildTasks :project-url-name="url_name" />
+          <LeafyTasksChildTasks
+            :org-url-name="org_url_name"
+            :project-url-name="url_name"
+          />
         </UCard>
 
         <UCard>
