@@ -55,7 +55,7 @@
           <UButton class="mr-3" color="neutral" variant="subtle" @click="expandAll">Expand All</UButton>
         </div>
         <div>
-          <UButton>New Project</UButton>
+          <UButton to="/projects/new">New Project</UButton>
         </div>
       </div>
     </template>

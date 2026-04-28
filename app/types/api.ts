@@ -1,4 +1,5 @@
 export type ProjectStatus = 'active' | 'on-hold' | 'completed' | 'archived'
+export type ProjectVisibility = 'private' | 'org'
 export type TaskStatus = 'pending' | 'wip' | 'blocked' | 'done'
 export type TaskPriority = 'low' | 'medium' | 'high' | 'critical'
 
@@ -12,6 +13,7 @@ export interface Project {
   title: string
   description: string
   status: ProjectStatus
+  visibility: ProjectVisibility
   owner: User
   start_date: string
   end_date: string
