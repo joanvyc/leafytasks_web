@@ -14,12 +14,21 @@ const { data: orgs } = await useApiFetch<Org[]>(
         <h1 class="text-xl font-bold">
           Organizations
         </h1>
-        <ULink
-          to="/dashboard"
-          class="text-sm text-neutral-500 hover:text-neutral-700"
-        >
-          Dashboard →
-        </ULink>
+        <div class="flex items-center gap-3">
+          <UButton
+            to="/orgs/new"
+            icon="lucide:plus"
+            size="xs"
+          >
+            New
+          </UButton>
+          <ULink
+            to="/dashboard"
+            class="text-sm text-neutral-500 hover:text-neutral-700"
+          >
+            Dashboard →
+          </ULink>
+        </div>
       </div>
     </template>
 

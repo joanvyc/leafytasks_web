@@ -8,10 +8,26 @@ export interface User {
   avatar: string
 }
 
+export type OrgRole = 'owner' | 'admin' | 'member'
+
 export interface Org {
   id: string
   url_name: string
   title: string
+}
+
+export interface OrgMember {
+  id: string
+  email: string
+  name: string
+  role: OrgRole
+}
+
+export interface OrgInvite {
+  id: string
+  email: string
+  role: OrgRole
+  created_at: string
 }
 
 export interface Project {

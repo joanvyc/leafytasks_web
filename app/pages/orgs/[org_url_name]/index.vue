@@ -87,7 +87,15 @@ const show_actionable = ref(true)
               Expand All
             </UButton>
           </div>
-          <div>
+          <div class="flex gap-2">
+            <UButton
+              color="neutral"
+              variant="subtle"
+              icon="lucide:settings"
+              :to="`/orgs/${org_url_name}/settings`"
+            >
+              Settings
+            </UButton>
             <UButton :to="`/orgs/${org_url_name}/projects/new`">
               New Project
             </UButton>
