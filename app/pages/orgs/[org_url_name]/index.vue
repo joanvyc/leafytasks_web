@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Org } from '~/types/api'
+import type { Org, Project } from '~/types/api'
 
 const route = useRoute()
 const org_url_name = route.params.org_url_name as string
@@ -16,27 +16,29 @@ if (orgError.value || !org.value) {
   })
 }
 
-// const { data: projects } = await useApiFetch(`/v1/orgs/${org_url_name}/projects`)
-const projects = reactive([
-  { name_url: 'destine-phase-iii', title: 'DestinE Phase III', description: '' },
-  { name_url: 'eurofusion-ach', title: 'EuroFusion ACH', description: '' },
-  { name_url: 'pop3', title: 'POP3', description: '' }
-])
+const { data: projects } = await useApiFetch<Project[]>(
+  `/v1/orgs/${org_url_name}/projects`,
+  { method: 'GET', default: () => [] }
+)
 
 const open_project = ref<Record<string, boolean>>({})
-for (const project of projects) {
-  open_project.value[project.name_url] = false
-}
+watchEffect(() => {
+  for (const project of projects.value ?? []) {
+    if (!(project.url_name in open_project.value)) {
+      open_project.value[project.url_name] = false
+    }
+  }
+})
 
 function expandAll() {
-  for (const project of projects) {
-    open_project.value[project.name_url] = true
+  for (const project of projects.value ?? []) {
+    open_project.value[project.url_name] = true
   }
 }
 
 function collapseAll() {
-  for (const project of projects) {
-    open_project.value[project.name_url] = false
+  for (const project of projects.value ?? []) {
+    open_project.value[project.url_name] = false
   }
 }
 
@@ -132,16 +134,22 @@ const show_actionable = ref(true)
     </div>
 
     <UScrollArea>
+      <p
+        v-if="!projects?.length"
+        class="text-sm text-neutral-500"
+      >
+        No projects yet.
+      </p>
       <article
-        v-for="(project, index) in projects"
-        :key="project.name_url"
+        v-for="(project, index) in projects || []"
+        :key="project.url_name"
       >
         <USeparator
           v-if="index != 0"
           class="mt-2 mb-2"
         />
         <LeafyTaskProjectSummary
-          v-model="open_project[project.name_url]"
+          v-model="open_project[project.url_name]"
           :org-url-name="org_url_name"
           :value="project"
         />

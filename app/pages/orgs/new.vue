@@ -54,7 +54,7 @@ function validate(state: NewOrgForm): FormError[] {
 
 async function handleSubmit(_event: FormSubmitEvent<NewOrgForm>) {
   try {
-    const created = await $apiFetch<{ url_name: string }>('/v1/orgs/new', {
+    const created = await $apiFetch<{ url_name: string }>('/v1/orgs', {
       method: 'POST',
       body: {
         title: form.title.trim(),

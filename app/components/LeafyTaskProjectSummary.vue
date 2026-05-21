@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Project } from '~/types/api'
+
 const open = defineModel()
 
 const props = defineProps({
@@ -7,11 +9,7 @@ const props = defineProps({
     required: true
   },
   value: {
-    type: Object as () => {
-      name_url?: string
-      title?: string
-      description?: string
-    },
+    type: Object as () => Pick<Project, 'url_name' | 'title' | 'description'>,
     required: true
   }
 })
@@ -20,7 +18,7 @@ const pending_project = null
 const project = props.value
 
 //  const { data: tasks, pending: pending_tasks, error: error_tasks } =
-//    await useApiFetch(`/v1/orgs/${props.orgUrlName}/projects/${props.value?.name_url}/tasks-leafs`, {
+//    await useApiFetch(`/v1/orgs/${props.orgUrlName}/projects/${props.value?.url_name}/tasks-leafs`, {
 //      lazy: true,
 //    });
 const tasks = [
@@ -74,7 +72,7 @@ function getToggleIcon() {
         class="flex-1"
         variant="ghost"
         color="neutral"
-        @click="navigateTo(`/orgs/${props.orgUrlName}/projects/${props.value?.name_url}`)"
+        @click="navigateTo(`/orgs/${props.orgUrlName}/projects/${props.value?.url_name}`)"
       >
         <div>
           <p class="font-bold font-size-xl">
@@ -97,7 +95,7 @@ function getToggleIcon() {
     >
       <div class="m-1 px-3 py-1 rounded bg-[#EEFFEE] hover:bg-[#E9F9E9] border border-[#77DD77]">
         <ULink
-          :to="`/orgs/${props.orgUrlName}/projects/${project.name_url}/tasks/${task.id}`"
+          :to="`/orgs/${props.orgUrlName}/projects/${project.url_name}/tasks/${task.id}`"
           class="flex justify-between items-center"
         >
           <UTooltip
