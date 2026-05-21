@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DependableCandidate, StatusUpdate, Task, TaskPriority } from '~/types/api'
+import type { DependableCandidate, StatusUpdate, Task, TaskPriority, TaskStatus } from '~/types/api'
 
 const route = useRoute()
 const org_url_name = route.params.org_url_name as string
@@ -45,7 +45,38 @@ const priority_config: Record<TaskPriority, { color: BadgeColor, label: string }
   critical: { color: 'error', label: 'Critical' }
 }
 
-const next_status_text = ref('')
+const status_options: { label: string, value: TaskStatus }[] = [
+  { label: 'Pending', value: 'pending' },
+  { label: 'WIP', value: 'wip' },
+  { label: 'Blocked', value: 'blocked' },
+  { label: 'Done', value: 'done' }
+]
+
+const next_comment_text = ref('')
+const next_status = ref<TaskStatus>(task.value.status as TaskStatus)
+
+function postUpdate(status: TaskStatus) {
+  status_updates.value = [
+    ...status_updates.value,
+    {
+      status,
+      description: next_comment_text.value,
+      author: 'You',
+      created_at: new Date().toISOString().slice(0, 10)
+    }
+  ]
+  task.value.status = status
+  next_comment_text.value = ''
+  next_status.value = status
+}
+
+function comment() {
+  postUpdate(next_status.value)
+}
+
+function commentAndComplete() {
+  postUpdate('done')
+}
 </script>
 
 <template>
@@ -117,12 +148,25 @@ const next_status_text = ref('')
             </h2>
           </template>
           <UTextarea
-            v-model="next_status_text"
+            v-model="next_comment_text"
             class="w-full mb-2"
             placeholder="Add a status update..."
           />
-          <div class="flex justify-end mb-6">
-            <UButton>Submit</UButton>
+          <div class="flex justify-end items-center gap-2 mb-6">
+            <USelect
+              v-model="next_status"
+              :items="status_options"
+              class="min-w-32"
+            />
+            <UButton @click="comment">
+              Comment
+            </UButton>
+            <UButton
+              color="success"
+              @click="commentAndComplete"
+            >
+              Comment and complete
+            </UButton>
           </div>
           <div class="flex justify-end mb-2">
             <USwitch
