@@ -4,14 +4,15 @@ import type { Org, Project } from '~/types/api'
 const route = useRoute()
 const org_url_name = route.params.org_url_name as string
 
-const { data: org, error: orgError } = await useApiFetch<Org>(
+const { data: orgs, error: orgsError } = await useApiFetch<Org[]>(
   '/v1/orgs',
-  { method: 'GET', query: { url_name: org_url_name } }
+  { method: 'GET', default: () => [] }
 )
-if (orgError.value || !org.value) {
+const org = computed(() => orgs.value?.find(o => o.url_name === org_url_name) ?? null)
+if (orgsError.value || !org.value) {
   throw createError({
-    statusCode: orgError.value?.statusCode ?? 404,
-    statusMessage: orgError.value?.statusMessage ?? 'Organization not found',
+    statusCode: orgsError.value?.statusCode ?? 404,
+    statusMessage: orgsError.value?.statusMessage ?? 'Organization not found',
     fatal: true
   })
 }

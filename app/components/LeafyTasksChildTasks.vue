@@ -7,8 +7,6 @@ const props = defineProps({
   taskId: String
 })
 
-const toast = useToast()
-
 type LinkAs = 'parent' | 'followup'
 
 const new_task_prompt_open = ref(false)
@@ -35,22 +33,28 @@ interface CreatedTask {
   description?: string
 }
 
-const projectBase = `/v1/orgs/${props.orgUrlName}/projects/${props.projectUrlName}`
-const subtasksUrl = props.taskId
-  ? `${projectBase}/tasks/${props.taskId}/childs`
-  : `${projectBase}/tasks`
-const leafsUrl = props.taskId
-  ? `${projectBase}/tasks/${props.taskId}/leafs`
-  : `${projectBase}/tasks?leafs=true`
+function stubTask(id: string, title: string, status: TaskSummary['status'] = 'pending'): TaskSummary {
+  return {
+    id,
+    title,
+    description: '',
+    status,
+    priority: 'medium',
+    assignee_id: '',
+    due_at: '',
+    updated_at: '2026-05-15',
+    completed_at: ''
+  }
+}
 
-const { data: subtasks, refresh: refreshSubtasks } = await useApiFetch<TaskSummary[]>(
-  subtasksUrl,
-  { method: 'GET', default: () => [] }
-)
-const { data: leafs } = await useApiFetch<TaskSummary[]>(
-  leafsUrl,
-  { method: 'GET', default: () => [] }
-)
+const subtasks = ref<TaskSummary[]>([
+  stubTask('s-1', 'Subtask one', 'wip'),
+  stubTask('s-2', 'Subtask two', 'pending')
+])
+const leafs = ref<TaskSummary[]>([
+  stubTask('l-1', 'Leaf task one', 'done'),
+  stubTask('l-2', 'Leaf task two', 'blocked')
+])
 
 function newTaskPrompt(id: string, link_as: LinkAs) {
   if (new_task.id == id && new_task.link_as == link_as) {
@@ -70,41 +74,32 @@ function clearNewTask() {
   new_task_prompt_open.value = false
 }
 
-async function createNewTask(): Promise<CreatedTask | null | undefined> {
-  try {
-    const created_task = await $apiFetch<CreatedTask>(`${projectBase}/tasks/new`, {
-      method: 'POST',
-      body: {
-        title: new_task.taskTitle,
-        description: new_task.description,
-        parent_id: new_task.link_as === 'parent'
-          ? new_task.id
-          : null,
-        dependencies: new_task.link_as === 'followup'
-          ? [new_task.id]
-          : []
-      }
-    })
-
-    await refreshSubtasks()
-    clearNewTask()
-    return created_task
-  } catch (err) {
-    toast.add({
-      title: 'Error: Creating task',
-      description: (err as Error)?.message
-    })
+function createNewTask(): CreatedTask | null {
+  const title = new_task.taskTitle.trim()
+  if (!title) {
     clearNewTask()
     return null
   }
+  const id = `t-${Date.now()}`
+  subtasks.value = [
+    ...subtasks.value,
+    stubTask(id, title, 'pending')
+  ]
+  const created: CreatedTask = {
+    id,
+    taskTitle: title,
+    description: new_task.description
+  }
+  clearNewTask()
+  return created
 }
 
-async function handleSubmit() {
-  await createNewTask()
+function handleSubmit() {
+  createNewTask()
 }
 
-async function createNewTaskAndOpen() {
-  const created = await createNewTask()
+function createNewTaskAndOpen() {
+  const created = createNewTask()
   if (created) navigateTo(`/orgs/${props.orgUrlName}/projects/${props.projectUrlName}/tasks/${created.id}`)
 }
 

@@ -5,23 +5,34 @@ const route = useRoute()
 const org_url_name = route.params.org_url_name as string
 const url_name = route.params.url_name as string
 
-const { data: project, error: projectError } = await useApiFetch<Project>(
-  `/v1/orgs/${org_url_name}/projects/${url_name}`,
-  { method: 'GET' }
+const { data: projects, error: projectsError } = await useApiFetch<Project[]>(
+  `/v1/orgs/${org_url_name}/projects`,
+  { method: 'GET', default: () => [] }
 )
-if (projectError.value || !project.value) {
+const project = computed(() => projects.value?.find(p => p.url_name === url_name) ?? null)
+if (projectsError.value || !project.value) {
   throw createError({
-    statusCode: projectError.value?.statusCode ?? 404,
-    statusMessage: projectError.value?.statusMessage ?? 'Project not found',
+    statusCode: projectsError.value?.statusCode ?? 404,
+    statusMessage: projectsError.value?.statusMessage ?? 'Project not found',
     fatal: true
   })
 }
 
 const recursive = ref(false)
-const { data: updates } = await useApiFetch<StatusUpdate[]>(
-  `/v1/orgs/${org_url_name}/projects/${url_name}/status`,
-  { method: 'GET', query: { recursive } }
-)
+const updates = ref<StatusUpdate[]>([
+  {
+    status: 'active',
+    description: 'Project kicked off and initial scope agreed.',
+    author: 'Alice Example',
+    created_at: '2026-05-01'
+  },
+  {
+    status: 'on-hold',
+    description: 'Waiting on partner sign-off before continuing.',
+    author: 'Bob Example',
+    created_at: '2026-05-10'
+  }
+])
 
 type BadgeColor = 'error' | 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'neutral'
 

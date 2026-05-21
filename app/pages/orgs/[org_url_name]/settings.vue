@@ -11,27 +11,28 @@ const toast = useToast()
 const route = useRoute()
 const org_url_name = route.params.org_url_name as string
 
-const { data: org, error: orgError } = await useApiFetch<Org>(
+const { data: orgs, error: orgsError } = await useApiFetch<Org[]>(
   '/v1/orgs',
-  { method: 'GET', query: { url_name: org_url_name } }
+  { method: 'GET', default: () => [] }
 )
-if (orgError.value || !org.value) {
+const org = computed(() => orgs.value?.find(o => o.url_name === org_url_name) ?? null)
+if (orgsError.value || !org.value) {
   throw createError({
-    statusCode: orgError.value?.statusCode ?? 404,
-    statusMessage: orgError.value?.statusMessage ?? 'Organization not found',
+    statusCode: orgsError.value?.statusCode ?? 404,
+    statusMessage: orgsError.value?.statusMessage ?? 'Organization not found',
     fatal: true
   })
 }
 
-const { data: members } = await useApiFetch<OrgMember[]>(
-  `/v1/orgs/${org_url_name}/members`,
-  { method: 'GET', default: () => [] }
-)
+const members = ref<OrgMember[]>([
+  { id: 'm-1', email: 'alice@example.com', name: 'Alice Example', role: 'owner' },
+  { id: 'm-2', email: 'bob@example.com', name: 'Bob Example', role: 'admin' },
+  { id: 'm-3', email: 'carol@example.com', name: 'Carol Example', role: 'member' }
+])
 
-const { data: invites, refresh: refreshInvites } = await useApiFetch<OrgInvite[]>(
-  `/v1/orgs/${org_url_name}/invites`,
-  { method: 'GET', default: () => [] }
-)
+const invites = ref<OrgInvite[]>([
+  { id: 'i-1', email: 'dave@example.com', role: 'member', created_at: '2026-05-01' }
+])
 
 const form = reactive<InviteForm>({
   email: '',
@@ -55,45 +56,28 @@ function validate(state: InviteForm): FormError[] {
   return errors
 }
 
-async function handleSubmit(_event: FormSubmitEvent<InviteForm>) {
-  try {
-    await $apiFetch(`/v1/orgs/${org_url_name}/invites`, {
-      method: 'POST',
-      body: {
-        email: form.email.trim(),
-        role: form.role
-      }
-    })
-    toast.add({
-      title: 'Invitation sent',
-      description: `Invited ${form.email.trim()} as ${form.role}`,
-      color: 'success'
-    })
-    form.email = ''
-    form.role = 'member'
-    await refreshInvites()
-  } catch (err) {
-    toast.add({
-      title: 'Error: Sending invitation',
-      description: (err as Error)?.message,
-      color: 'error'
-    })
-  }
+function handleSubmit(_event: FormSubmitEvent<InviteForm>) {
+  const email = form.email.trim()
+  invites.value = [
+    ...invites.value,
+    {
+      id: `i-${Date.now()}`,
+      email,
+      role: form.role,
+      created_at: new Date().toISOString().slice(0, 10)
+    }
+  ]
+  toast.add({
+    title: 'Invitation sent',
+    description: `Invited ${email} as ${form.role}`,
+    color: 'success'
+  })
+  form.email = ''
+  form.role = 'member'
 }
 
-async function revokeInvite(invite: OrgInvite) {
-  try {
-    await $apiFetch(`/v1/orgs/${org_url_name}/invites/${invite.id}`, {
-      method: 'DELETE'
-    })
-    await refreshInvites()
-  } catch (err) {
-    toast.add({
-      title: 'Error: Revoking invitation',
-      description: (err as Error)?.message,
-      color: 'error'
-    })
-  }
+function revokeInvite(invite: OrgInvite) {
+  invites.value = invites.value.filter(i => i.id !== invite.id)
 }
 
 function roleColor(role: OrgRole): 'primary' | 'info' | 'neutral' {

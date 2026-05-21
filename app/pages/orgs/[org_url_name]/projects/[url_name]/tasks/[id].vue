@@ -6,31 +6,35 @@ const org_url_name = route.params.org_url_name as string
 const url_name = route.params.url_name as string
 const taskId = route.params.id as string
 
-const taskBase = `/v1/orgs/${org_url_name}/projects/${url_name}/tasks/${taskId}`
-
-const { data: task, error: taskError } = await useApiFetch<Task>(
-  taskBase,
-  { method: 'GET' }
-)
-if (taskError.value || !task.value) {
-  throw createError({
-    statusCode: taskError.value?.statusCode ?? 404,
-    statusMessage: taskError.value?.statusMessage ?? 'Task not found',
-    fatal: true
-  })
-}
+const task = ref<Task>({
+  id: taskId,
+  title: 'Sample task',
+  description: 'This is placeholder task content shown while the task API is not yet implemented.',
+  status: 'wip',
+  priority: 'medium',
+  assignee_id: 'm-1',
+  due_at: '2026-06-30',
+  updated_at: '2026-05-15',
+  completed_at: '',
+  assignee: { name: 'Alice Example', avatar: 'https://gitlab.pm.bsc.es/uploads/-/system/user/avatar/216/avatar.png' },
+  created_at: '2026-05-01',
+  dependencies: [
+    { id: 'dep-1', title: 'Dependency task one', status: 'done' },
+    { id: 'dep-2', title: 'Dependency task two', status: 'blocked' }
+  ]
+})
 
 const recursive = ref(false)
-const { data: status_updates } = await useApiFetch<StatusUpdate[]>(
-  `${taskBase}/status`,
-  { method: 'GET', query: { recursive } }
-)
+const status_updates = ref<StatusUpdate[]>([
+  { status: 'pending', description: 'Task created.', author: 'Alice Example', created_at: '2026-05-01' },
+  { status: 'wip', description: 'Started working on the implementation.', author: 'Alice Example', created_at: '2026-05-10' }
+])
 
 const dependencySearch = ref('')
-const { data: dependencyCandidates } = await useApiFetch<DependableCandidate[]>(
-  `${taskBase}/dependable`,
-  { method: 'GET', query: { q: dependencySearch }, default: () => [] }
-)
+const dependencyCandidates = ref<DependableCandidate[]>([
+  { id: 'cand-1', title: 'Candidate task A' },
+  { id: 'cand-2', title: 'Candidate task B' }
+])
 
 type BadgeColor = 'error' | 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'neutral'
 
