@@ -14,10 +14,11 @@ export const useApiFetch = createUseFetch(() => {
     )
   }
 
+  const { getToken } = useAuth()
+
   return {
     baseURL: baseURL ?? '',
     async onRequest({ options }) {
-      const { getToken } = useAuth()
       const token = await getToken.value()
       if (!token) return
       const headers = new Headers(options.headers as HeadersInit | undefined)
