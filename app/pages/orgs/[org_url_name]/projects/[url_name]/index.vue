@@ -6,7 +6,7 @@ const org_url_name = route.params.org_url_name as string
 const url_name = route.params.url_name as string
 
 const { data: project, error: projectError } = await useApiFetch<Project>(
-  `/api/orgs/${org_url_name}/projects/${url_name}`,
+  `/v1/orgs/${org_url_name}/projects/${url_name}`,
   { method: 'GET' }
 )
 if (projectError.value || !project.value) {
@@ -19,7 +19,7 @@ if (projectError.value || !project.value) {
 
 const recursive = ref(false)
 const { data: updates } = await useApiFetch<StatusUpdate[]>(
-  `/api/orgs/${org_url_name}/projects/${url_name}/status`,
+  `/v1/orgs/${org_url_name}/projects/${url_name}/status`,
   { method: 'GET', query: { recursive } }
 )
 

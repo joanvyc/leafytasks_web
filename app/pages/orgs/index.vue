@@ -2,7 +2,7 @@
 import type { Org } from '~/types/api'
 
 const { data: orgs } = await useApiFetch<Org[]>(
-  '/api/orgs',
+  '/v1/orgs',
   { method: 'GET', default: () => [] }
 )
 </script>

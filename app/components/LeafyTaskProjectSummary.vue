@@ -20,7 +20,7 @@ const pending_project = null
 const project = props.value
 
 //  const { data: tasks, pending: pending_tasks, error: error_tasks } =
-//    await useApiFetch(`/api/orgs/${props.orgUrlName}/projects/${props.value?.name_url}/tasks-leafs`, {
+//    await useApiFetch(`/v1/orgs/${props.orgUrlName}/projects/${props.value?.name_url}/tasks-leafs`, {
 //      lazy: true,
 //    });
 const tasks = [

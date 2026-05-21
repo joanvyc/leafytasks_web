@@ -6,7 +6,7 @@ const props = defineProps<{
 }>()
 
 // const { data: projects } = await useApiFetch(
-//   `/api/orgs/${props.org.url_name}/projects`,
+//   `/v1/orgs/${props.org.url_name}/projects`,
 //   { method: 'GET', default: () => [] }
 // )
 const projects = reactive([

@@ -12,7 +12,7 @@ const route = useRoute()
 const org_url_name = route.params.org_url_name as string
 
 const { data: org, error: orgError } = await useApiFetch<Org>(
-  '/api/orgs',
+  '/v1/orgs',
   { method: 'GET', query: { url_name: org_url_name } }
 )
 if (orgError.value || !org.value) {
@@ -24,12 +24,12 @@ if (orgError.value || !org.value) {
 }
 
 const { data: members } = await useApiFetch<OrgMember[]>(
-  `/api/orgs/${org_url_name}/members`,
+  `/v1/orgs/${org_url_name}/members`,
   { method: 'GET', default: () => [] }
 )
 
 const { data: invites, refresh: refreshInvites } = await useApiFetch<OrgInvite[]>(
-  `/api/orgs/${org_url_name}/invites`,
+  `/v1/orgs/${org_url_name}/invites`,
   { method: 'GET', default: () => [] }
 )
 
@@ -57,7 +57,7 @@ function validate(state: InviteForm): FormError[] {
 
 async function handleSubmit(_event: FormSubmitEvent<InviteForm>) {
   try {
-    await $apiFetch(`/api/orgs/${org_url_name}/invites`, {
+    await $apiFetch(`/v1/orgs/${org_url_name}/invites`, {
       method: 'POST',
       body: {
         email: form.email.trim(),
@@ -83,7 +83,7 @@ async function handleSubmit(_event: FormSubmitEvent<InviteForm>) {
 
 async function revokeInvite(invite: OrgInvite) {
   try {
-    await $apiFetch(`/api/orgs/${org_url_name}/invites/${invite.id}`, {
+    await $apiFetch(`/v1/orgs/${org_url_name}/invites/${invite.id}`, {
       method: 'DELETE'
     })
     await refreshInvites()

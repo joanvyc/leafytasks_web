@@ -35,7 +35,7 @@ interface CreatedTask {
   description?: string
 }
 
-const projectBase = `/api/orgs/${props.orgUrlName}/projects/${props.projectUrlName}`
+const projectBase = `/v1/orgs/${props.orgUrlName}/projects/${props.projectUrlName}`
 const subtasksUrl = props.taskId
   ? `${projectBase}/tasks/${props.taskId}/childs`
   : `${projectBase}/tasks`

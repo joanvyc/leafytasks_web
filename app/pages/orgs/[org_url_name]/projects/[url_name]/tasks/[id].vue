@@ -6,7 +6,7 @@ const org_url_name = route.params.org_url_name as string
 const url_name = route.params.url_name as string
 const taskId = route.params.id as string
 
-const taskBase = `/api/orgs/${org_url_name}/projects/${url_name}/tasks/${taskId}`
+const taskBase = `/v1/orgs/${org_url_name}/projects/${url_name}/tasks/${taskId}`
 
 const { data: task, error: taskError } = await useApiFetch<Task>(
   taskBase,

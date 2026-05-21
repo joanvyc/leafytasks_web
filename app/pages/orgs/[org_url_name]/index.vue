@@ -5,7 +5,7 @@ const route = useRoute()
 const org_url_name = route.params.org_url_name as string
 
 const { data: org, error: orgError } = await useApiFetch<Org>(
-  '/api/orgs',
+  '/v1/orgs',
   { method: 'GET', query: { url_name: org_url_name } }
 )
 if (orgError.value || !org.value) {
@@ -16,7 +16,7 @@ if (orgError.value || !org.value) {
   })
 }
 
-// const { data: projects } = await useApiFetch(`/api/orgs/${org_url_name}/projects`)
+// const { data: projects } = await useApiFetch(`/v1/orgs/${org_url_name}/projects`)
 const projects = reactive([
   { name_url: 'destine-phase-iii', title: 'DestinE Phase III', description: '' },
   { name_url: 'eurofusion-ach', title: 'EuroFusion ACH', description: '' },
