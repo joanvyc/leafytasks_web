@@ -25,9 +25,15 @@ export interface OrgMember {
 
 export interface OrgInvite {
   id: string
-  email: string
+  username: string
   role: OrgRole
   created_at: string
+}
+
+export interface UserSummary {
+  id: string
+  username: string
+  name?: string
 }
 
 export type ApiDateTime = [number, number, number, number, number, number, number, number, number]

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { FormError, FormSubmitEvent } from '@nuxt/ui'
-import type { Org, OrgInvite, OrgMember, OrgRole } from '~/types/api'
+import type { Org, OrgInvite, OrgMember, OrgRole, UserSummary } from '~/types/api'
 
 interface InviteForm {
-  email: string
+  user: UserSummary | undefined
   role: OrgRole
 }
 
@@ -31,11 +31,11 @@ const members = ref<OrgMember[]>([
 ])
 
 const invites = ref<OrgInvite[]>([
-  { id: 'i-1', email: 'dave@example.com', role: 'member', created_at: '2026-05-01' }
+  { id: 'i-1', username: 'dave', role: 'member', created_at: '2026-05-01' }
 ])
 
 const form = reactive<InviteForm>({
-  email: '',
+  user: undefined,
   role: 'member'
 })
 
@@ -44,36 +44,62 @@ const role_options = [
   { label: 'Admin', value: 'admin' as const }
 ]
 
-const email_pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const userSearch = ref('')
+const userResults = ref<UserSummary[]>([])
+const userSearchLoading = ref(false)
+let userSearchTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(userSearch, (q) => {
+  if (userSearchTimer) clearTimeout(userSearchTimer)
+  const term = q.trim()
+  if (!term) {
+    userResults.value = []
+    userSearchLoading.value = false
+    return
+  }
+  userSearchLoading.value = true
+  userSearchTimer = setTimeout(async () => {
+    try {
+      userResults.value = await $apiFetch<UserSummary[]>('/v1/users/list', {
+        query: { filter: term }
+      })
+    } catch {
+      userResults.value = []
+    } finally {
+      userSearchLoading.value = false
+    }
+  }, 250)
+})
 
 function validate(state: InviteForm): FormError[] {
   const errors: FormError[] = []
-  if (!state.email.trim()) {
-    errors.push({ name: 'email', message: 'Required' })
-  } else if (!email_pattern.test(state.email.trim())) {
-    errors.push({ name: 'email', message: 'Enter a valid email' })
+  if (!state.user) {
+    errors.push({ name: 'user', message: 'Pick a user' })
   }
   return errors
 }
 
 function handleSubmit(_event: FormSubmitEvent<InviteForm>) {
-  const email = form.email.trim()
+  if (!form.user) return
+  const username = form.user.username
   invites.value = [
     ...invites.value,
     {
       id: `i-${Date.now()}`,
-      email,
+      username,
       role: form.role,
       created_at: new Date().toISOString().slice(0, 10)
     }
   ]
   toast.add({
     title: 'Invitation sent',
-    description: `Invited ${email} as ${form.role}`,
+    description: `Invited ${username} as ${form.role}`,
     color: 'success'
   })
-  form.email = ''
+  form.user = undefined
   form.role = 'member'
+  userSearch.value = ''
+  userResults.value = []
 }
 
 function revokeInvite(invite: OrgInvite) {
@@ -124,14 +150,19 @@ function roleColor(role: OrgRole): 'primary' | 'info' | 'neutral' {
       >
         <UFormField
           required
-          name="email"
-          label="Email"
+          name="user"
+          label="Username"
           class="flex-1"
         >
-          <UInput
-            v-model="form.email"
-            type="email"
-            placeholder="user@example.com"
+          <UInputMenu
+            v-model="form.user"
+            v-model:search-term="userSearch"
+            :items="userResults"
+            :loading="userSearchLoading"
+            ignore-filter
+            label-key="username"
+            by="id"
+            placeholder="Search users..."
             class="w-full"
           />
         </UFormField>
@@ -185,7 +216,7 @@ function roleColor(role: OrgRole): 'primary' | 'info' | 'neutral' {
         <div class="flex justify-between items-center px-3 py-2">
           <div>
             <p class="font-medium">
-              {{ invite.email }}
+              {{ invite.username }}
             </p>
             <p class="text-xs text-neutral-500">
               Invited {{ invite.created_at }}
