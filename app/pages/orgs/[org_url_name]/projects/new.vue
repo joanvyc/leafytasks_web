@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { FormError, FormSubmitEvent } from '@nuxt/ui'
-import type { ProjectVisibility } from '~/types/api'
+import type { Project, ProjectVisibility } from '~/types/api'
 
 interface NewProjectForm {
   title: string
@@ -66,7 +66,7 @@ function validate(state: NewProjectForm): FormError[] {
 
 async function handleSubmit(_event: FormSubmitEvent<NewProjectForm>) {
   try {
-    const created = await $apiFetch<{ url_name: string }>(`/v1/orgs/${org_url_name}/projects`, {
+    const created = await $apiFetch<Project>(`/v1/orgs/${org_url_name}/projects`, {
       method: 'POST',
       body: {
         title: form.title.trim(),

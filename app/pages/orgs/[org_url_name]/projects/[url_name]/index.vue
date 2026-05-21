@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Project, ProjectStatus, StatusUpdate } from '~/types/api'
+import type { ApiDateTime, Project, ProjectStatus, StatusUpdate } from '~/types/api'
 
 const route = useRoute()
 const org_url_name = route.params.org_url_name as string
@@ -41,6 +41,15 @@ const status_config: Record<ProjectStatus, { color: BadgeColor, label: string }>
   'on-hold': { color: 'warning', label: 'On Hold' },
   'completed': { color: 'neutral', label: 'Completed' },
   'archived': { color: 'neutral', label: 'Archived' }
+}
+
+function formatDate(value: ApiDateTime | null | undefined): string {
+  if (!value) return ''
+  const [year, ordinal, hour, minute, second] = value
+  return new Date(Date.UTC(year, 0, ordinal, hour, minute, second))
+    .toISOString()
+    .slice(0, 19)
+    .replace('T', ' ')
 }
 
 const next_update_text = ref('')
@@ -162,63 +171,23 @@ const next_update_text = ref('')
         <div class="flex flex-col gap-3 text-sm">
           <div>
             <p class="text-neutral-500 mb-1">
-              Status
-            </p>
-            <UBadge
-              :color="status_config[project.status].color"
-              variant="soft"
-            >
-              {{ status_config[project.status].label }}
-            </UBadge>
-          </div>
-          <USeparator />
-          <div>
-            <p class="text-neutral-500 mb-2">
-              Progress
-            </p>
-            <p class="mb-2">
-              {{ project.tasks_done }} / {{ project.tasks_total }} tasks done
-            </p>
-            <div class="h-2 w-full rounded-full bg-neutral-200 overflow-hidden">
-              <div
-                class="h-full bg-primary-400 rounded-full"
-                :style="{ width: `${Math.round((project.tasks_done / project.tasks_total) * 100)}%` }"
-              />
-            </div>
-          </div>
-          <USeparator />
-          <div>
-            <p class="text-neutral-500 mb-1">
-              Owner
-            </p>
-            <UUser
-              :name="project.owner.name"
-              :avatar="{
-                src: project.owner.avatar,
-                loading: 'lazy'
-              }"
-            />
-          </div>
-          <USeparator />
-          <div>
-            <p class="text-neutral-500 mb-1">
-              Start date
-            </p>
-            <p>{{ project.start_date }}</p>
-          </div>
-          <USeparator />
-          <div>
-            <p class="text-neutral-500 mb-1">
               End date
             </p>
-            <p>{{ project.end_date }}</p>
+            <p>{{ project.end_date ? formatDate(project.end_date) : '—' }}</p>
+          </div>
+          <USeparator />
+          <div>
+            <p class="text-neutral-500 mb-1">
+              Created
+            </p>
+            <p>{{ formatDate(project.created_at) }}</p>
           </div>
           <USeparator />
           <div>
             <p class="text-neutral-500 mb-1">
               Updated
             </p>
-            <p>{{ project.updated_at }}</p>
+            <p>{{ formatDate(project.updated_at) }}</p>
           </div>
         </div>
       </UCard>

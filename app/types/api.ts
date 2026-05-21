@@ -30,19 +30,16 @@ export interface OrgInvite {
   created_at: string
 }
 
+export type ApiDateTime = [number, number, number, number, number, number, number, number, number]
+
 export interface Project {
   url_name: string
   title: string
   description: string
-  status: ProjectStatus
-  visibility: ProjectVisibility
-  owner: User
-  start_date: string
-  end_date: string
-  tasks_total: number
-  tasks_done: number
-  created_at: string
-  updated_at: string
+  end_date: ApiDateTime | null
+  created_by: string
+  created_at: ApiDateTime
+  updated_at: ApiDateTime
 }
 
 export interface TaskSummary {
