@@ -1,23 +1,23 @@
 <script setup lang="ts">
-const props = defineProps({
-  status: String
+const props = withDefaults(defineProps<{ status?: string }>(), {
+  status: ''
 })
 
-const status_color = {
+const status_color: Record<string, 'success' | 'info' | 'warning' | 'error'> = {
   done: 'success',
   wip: 'info',
   pending: 'warning',
   blocked: 'error'
 }
 
-const status_icon = {
+const status_icon: Record<string, string> = {
   done: 'material-symbols:check-circle-outline-rounded',
   wip: 'material-symbols:progress-activity',
   pending: 'material-symbols:circle-outline',
   blocked: 'material-symbols:error-circle-rounded-sharp'
 }
 
-const status_name = {
+const status_name: Record<string, string> = {
   done: 'Done',
   wip: 'In Progress',
   pending: 'Pending',

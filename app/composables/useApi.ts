@@ -3,13 +3,13 @@ import type { FetchContext } from 'ofetch'
 export const useApiFetch = createUseFetch(() => {
   const config = useRuntimeConfig()
   const baseURL = import.meta.server
-    ? process.env.INTERNAL_API_BASE
+    ? config.internalApiBase
     : config.public.apiBase
 
   if (!baseURL && !import.meta.prerender) {
     throw new Error(
       import.meta.server
-        ? 'INTERNAL_API_BASE env var is required at runtime'
+        ? 'NUXT_INTERNAL_API_BASE env var is required at runtime'
         : 'NUXT_PUBLIC_API_BASE env var is required at runtime'
     )
   }

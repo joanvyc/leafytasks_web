@@ -4,7 +4,7 @@ import type { Org, OrgInvite, OrgMember, OrgRole, UserSummary } from '~/types/ap
 
 interface InviteForm {
   user: UserSummary | undefined
-  role: OrgRole
+  role: 'admin' | 'member'
 }
 
 const toast = useToast()

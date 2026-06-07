@@ -15,13 +15,8 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
-  ui: {
-    primary: 'indigo',
-    gray: 'slate',
-    borderRadius: 'lg'
-  },
-
   runtimeConfig: {
+    internalApiBase: '',
     public: {
       apiBase: ''
     }
