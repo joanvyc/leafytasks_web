@@ -1,6 +1,6 @@
 export type ProjectStatus = 'active' | 'on-hold' | 'completed' | 'archived'
 export type ProjectVisibility = 'private' | 'org'
-export type TaskStatus = 'pending' | 'wip' | 'blocked' | 'done'
+export type TaskStatus = 'todo' | 'wip' | 'blocked' | 'canceled' | 'done'
 export type TaskPriority = 'low' | 'medium' | 'high' | 'critical'
 
 export interface User {
@@ -49,27 +49,18 @@ export interface Project {
 }
 
 export interface TaskSummary {
-  id: string
+  id: number
+  parent_id: number | null
   title: string
   description: string
-  status: TaskStatus | ''
-  priority: TaskPriority | ''
+  priority: string
   assignee_id: string
-  due_at: string
-  updated_at: string
-  completed_at: string
-}
-
-export interface TaskDependency {
-  id: string
-  title: string
+  due_at: ApiDateTime
+  created_by: string
+  created_at: ApiDateTime
+  updated_at: ApiDateTime
   status: TaskStatus
-}
-
-export interface Task extends TaskSummary {
-  assignee: User
-  created_at: string
-  dependencies: TaskDependency[]
+  has_active_dependencies: boolean
 }
 
 export interface StatusUpdate {

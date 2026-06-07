@@ -1,32 +1,31 @@
 <script setup lang="ts">
-import type { DependableCandidate, StatusUpdate, Task, TaskPriority, TaskStatus } from '~/types/api'
+import type { ApiDateTime, DependableCandidate, StatusUpdate, TaskPriority, TaskStatus, TaskSummary } from '~/types/api'
 
 const route = useRoute()
 const org_url_name = route.params.org_url_name as string
 const url_name = route.params.url_name as string
 const taskId = route.params.id as string
 
-const task = ref<Task>({
-  id: taskId,
-  title: 'Sample task',
-  description: 'This is placeholder task content shown while the task API is not yet implemented.',
-  status: 'wip',
-  priority: 'medium',
-  assignee_id: 'm-1',
-  due_at: '2026-06-30',
-  updated_at: '2026-05-15',
-  completed_at: '',
-  assignee: { name: 'Alice Example', avatar: 'https://gitlab.pm.bsc.es/uploads/-/system/user/avatar/216/avatar.png' },
-  created_at: '2026-05-01',
-  dependencies: [
-    { id: 'dep-1', title: 'Dependency task one', status: 'done' },
-    { id: 'dep-2', title: 'Dependency task two', status: 'blocked' }
-  ]
-})
+const { data: task, error } = await useApiFetch<TaskSummary>(
+  `/v1/orgs/${org_url_name}/projects/${url_name}/tasks/${taskId}`,
+  { method: 'GET' }
+)
+if (error.value || !task.value) {
+  throw createError({
+    statusCode: error.value?.statusCode ?? 404,
+    statusMessage: error.value?.statusMessage ?? 'Task not found',
+    fatal: true
+  })
+}
+
+const { data: dependencies } = await useApiFetch<TaskSummary[]>(
+  `/v1/orgs/${org_url_name}/projects/${url_name}/tasks/${taskId}/deps`,
+  { method: 'GET', query: { filter: 'all' }, default: () => [] }
+)
 
 const recursive = ref(false)
 const status_updates = ref<StatusUpdate[]>([
-  { status: 'pending', description: 'Task created.', author: 'Alice Example', created_at: '2026-05-01' },
+  { status: 'todo', description: 'Task created.', author: 'Alice Example', created_at: '2026-05-01' },
   { status: 'wip', description: 'Started working on the implementation.', author: 'Alice Example', created_at: '2026-05-10' }
 ])
 
@@ -45,15 +44,29 @@ const priority_config: Record<TaskPriority, { color: BadgeColor, label: string }
   critical: { color: 'error', label: 'Critical' }
 }
 
+function priorityInfo(priority: string): { color: BadgeColor, label: string } {
+  return priority_config[priority as TaskPriority] ?? { color: 'neutral', label: priority }
+}
+
+function formatDate(value: ApiDateTime | null | undefined): string {
+  if (!value) return ''
+  const [year, ordinal, hour, minute, second] = value
+  return new Date(Date.UTC(year, 0, ordinal, hour, minute, second))
+    .toISOString()
+    .slice(0, 19)
+    .replace('T', ' ')
+}
+
 const status_options: { label: string, value: TaskStatus }[] = [
-  { label: 'Pending', value: 'pending' },
+  { label: 'To Do', value: 'todo' },
   { label: 'WIP', value: 'wip' },
   { label: 'Blocked', value: 'blocked' },
+  { label: 'Canceled', value: 'canceled' },
   { label: 'Done', value: 'done' }
 ]
 
 const next_comment_text = ref('')
-const next_status = ref<TaskStatus>(task.value.status as TaskStatus)
+const next_status = ref<TaskStatus>(task.value?.status ?? 'todo')
 
 function postUpdate(status: TaskStatus) {
   status_updates.value = [
@@ -65,7 +78,7 @@ function postUpdate(status: TaskStatus) {
       created_at: new Date().toISOString().slice(0, 10)
     }
   ]
-  task.value.status = status
+  if (task.value) task.value.status = status
   next_comment_text.value = ''
   next_status.value = status
 }
@@ -95,10 +108,10 @@ function commentAndComplete() {
         >
           <LTStatus :status="task.status" />
           <UBadge
-            :color="priority_config[task.priority as TaskPriority].color"
+            :color="priorityInfo(task.priority).color"
             variant="outline"
           >
-            {{ priority_config[task.priority as TaskPriority].label }}
+            {{ priorityInfo(task.priority).label }}
           </UBadge>
         </div>
       </div>
@@ -219,10 +232,10 @@ function commentAndComplete() {
               Priority
             </p>
             <UBadge
-              :color="priority_config[task.priority as TaskPriority].color"
+              :color="priorityInfo(task.priority).color"
               variant="outline"
             >
-              {{ priority_config[task.priority as TaskPriority].label }}
+              {{ priorityInfo(task.priority).label }}
             </UBadge>
           </div>
           <USeparator />
@@ -230,34 +243,30 @@ function commentAndComplete() {
             <p class="text-neutral-500 mb-1">
               Assignee
             </p>
-            <UUser
-              :name="task.assignee.name"
-              :avatar="{
-                src: task.assignee.avatar,
-                loading: 'lazy'
-              }"
-            />
+            <p class="break-all">
+              {{ task.assignee_id }}
+            </p>
           </div>
           <USeparator />
           <div>
             <p class="text-neutral-500 mb-1">
               Due date
             </p>
-            <p>{{ task.due_at }}</p>
+            <p>{{ formatDate(task.due_at) }}</p>
           </div>
           <USeparator />
           <div>
             <p class="text-neutral-500 mb-1">
               Created
             </p>
-            <p>{{ task.created_at }}</p>
+            <p>{{ formatDate(task.created_at) }}</p>
           </div>
           <USeparator />
           <div>
             <p class="text-neutral-500 mb-1">
               Updated
             </p>
-            <p>{{ task.updated_at }}</p>
+            <p>{{ formatDate(task.updated_at) }}</p>
           </div>
           <USeparator />
           <div>
@@ -265,7 +274,7 @@ function commentAndComplete() {
               Dependencies
             </p>
             <div
-              v-for="dep in task.dependencies"
+              v-for="dep in dependencies"
               :key="dep.id"
               class="flex items-center gap-2 mb-1"
             >

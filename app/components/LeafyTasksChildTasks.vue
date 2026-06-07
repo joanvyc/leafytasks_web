@@ -11,7 +11,7 @@ type LinkAs = 'parent' | 'followup'
 
 const new_task_prompt_open = ref(false)
 const new_task = reactive<{
-  id: string | null
+  id: number | null
   link_as: LinkAs | null
   taskTitle: string
   description: string
@@ -27,36 +27,35 @@ const new_task_title: Record<LinkAs, string> = {
   followup: 'Follow up task'
 }
 
-interface CreatedTask {
-  id: string
-  taskTitle?: string
-  description?: string
-}
+const stub_date: TaskSummary['created_at'] = [2026, 1, 0, 0, 0, 0, 0, 0, 0]
 
-function stubTask(id: string, title: string, status: TaskSummary['status'] = 'pending'): TaskSummary {
+function stubTask(id: number, title: string, status: TaskSummary['status'] = 'todo'): TaskSummary {
   return {
     id,
+    parent_id: null,
     title,
     description: '',
-    status,
     priority: 'medium',
     assignee_id: '',
-    due_at: '',
-    updated_at: '2026-05-15',
-    completed_at: ''
+    due_at: stub_date,
+    created_by: '',
+    created_at: stub_date,
+    updated_at: stub_date,
+    status,
+    has_active_dependencies: false
   }
 }
 
 const subtasks = ref<TaskSummary[]>([
-  stubTask('s-1', 'Subtask one', 'wip'),
-  stubTask('s-2', 'Subtask two', 'pending')
+  stubTask(-1, 'Subtask one', 'wip'),
+  stubTask(-2, 'Subtask two', 'todo')
 ])
 const leafs = ref<TaskSummary[]>([
-  stubTask('l-1', 'Leaf task one', 'done'),
-  stubTask('l-2', 'Leaf task two', 'blocked')
+  stubTask(-3, 'Leaf task one', 'done'),
+  stubTask(-4, 'Leaf task two', 'blocked')
 ])
 
-function newTaskPrompt(id: string, link_as: LinkAs) {
+function newTaskPrompt(id: number, link_as: LinkAs) {
   if (new_task.id == id && new_task.link_as == link_as) {
     clearNewTask()
     return
@@ -74,32 +73,37 @@ function clearNewTask() {
   new_task_prompt_open.value = false
 }
 
-function createNewTask(): CreatedTask | null {
+async function createNewTask(): Promise<{ id: number } | null> {
   const title = new_task.taskTitle.trim()
   if (!title) {
     clearNewTask()
     return null
   }
-  const id = `t-${Date.now()}`
+  const link_id = new_task.id
+  const body = {
+    title,
+    description: new_task.description,
+    parent_id: new_task.link_as === 'parent' ? link_id : null,
+    dependencies: new_task.link_as === 'followup' && link_id != null ? [link_id] : []
+  }
+  const created = await $apiFetch<{ id: number }>(
+    `/v1/orgs/${props.orgUrlName}/projects/${props.projectUrlName}/tasks`,
+    { method: 'POST', body }
+  )
   subtasks.value = [
     ...subtasks.value,
-    stubTask(id, title, 'pending')
+    stubTask(created.id, title, 'todo')
   ]
-  const created: CreatedTask = {
-    id,
-    taskTitle: title,
-    description: new_task.description
-  }
   clearNewTask()
   return created
 }
 
-function handleSubmit() {
-  createNewTask()
+async function handleSubmit() {
+  await createNewTask()
 }
 
-function createNewTaskAndOpen() {
-  const created = createNewTask()
+async function createNewTaskAndOpen() {
+  const created = await createNewTask()
   if (created) navigateTo(`/orgs/${props.orgUrlName}/projects/${props.projectUrlName}/tasks/${created.id}`)
 }
 

@@ -3,25 +3,28 @@ const props = withDefaults(defineProps<{ status?: string }>(), {
   status: ''
 })
 
-const status_color: Record<string, 'success' | 'info' | 'warning' | 'error'> = {
+const status_color: Record<string, 'success' | 'info' | 'warning' | 'error' | 'neutral'> = {
   done: 'success',
   wip: 'info',
-  pending: 'warning',
-  blocked: 'error'
+  todo: 'warning',
+  blocked: 'error',
+  canceled: 'neutral'
 }
 
 const status_icon: Record<string, string> = {
   done: 'material-symbols:check-circle-outline-rounded',
   wip: 'material-symbols:progress-activity',
-  pending: 'material-symbols:circle-outline',
-  blocked: 'material-symbols:error-circle-rounded-sharp'
+  todo: 'material-symbols:circle-outline',
+  blocked: 'material-symbols:error-circle-rounded-sharp',
+  canceled: 'material-symbols:cancel-outline-rounded'
 }
 
 const status_name: Record<string, string> = {
   done: 'Done',
   wip: 'In Progress',
-  pending: 'Pending',
-  blocked: 'Blocked'
+  todo: 'To Do',
+  blocked: 'Blocked',
+  canceled: 'Canceled'
 }
 </script>
 
