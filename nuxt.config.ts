@@ -1,6 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  ssr: false,
 
   modules: [
     '@nuxt/eslint',
@@ -8,12 +7,7 @@ export default defineNuxtConfig({
     '@nuxtjs/mdc',
     '@clerk/nuxt'
   ],
-
-  runtimeConfig: {
-    public: {
-      apiBase: ''
-    }
-  },
+  ssr: false,
 
   devtools: {
     enabled: true
@@ -21,14 +15,20 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
-  routeRules: {
-    '/': { prerender: true }
-  },
-
   ui: {
     primary: 'indigo',
     gray: 'slate',
-    borderRadius: 'lg',
+    borderRadius: 'lg'
+  },
+
+  runtimeConfig: {
+    public: {
+      apiBase: ''
+    }
+  },
+
+  routeRules: {
+    '/': { prerender: true }
   },
 
   compatibilityDate: '2025-01-15',

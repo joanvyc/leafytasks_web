@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Project } from '~/types/api'
 
-const open = defineModel()
+const open = defineModel<boolean>()
 
 const props = defineProps({
   orgUrlName: {
