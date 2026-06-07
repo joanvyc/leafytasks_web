@@ -2,15 +2,40 @@
   <div class="min-h-screen bg-[#F0E4D0]">
     <UDashboardNavbar class="bg-[#FFEFEE]">
       <template #title>
-        <ULink class="font-bold" to="/dashboard">LeafyTasks</ULink>
+        <ULink
+          class="font-bold"
+          to="/dashboard"
+        >LeafyTasks</ULink>
       </template>
       <template #right>
         <Show when="signed-out">
-          <SignInButton />
-          <SignUpButton />
+          <SignInButton>
+            <UButton
+              variant="solid"
+              color="neutral"
+              class="mr-2 ring-1 ring-inset ring-default"
+            >
+              Sign in
+            </UButton>
+          </SignInButton>
+          <SignUpButton>
+            <UButton
+              variant="solid"
+              class="mr-3 ring-1 ring-inset ring-default"
+            >
+              Sign up
+            </UButton>
+          </SignUpButton>
         </Show>
         <Show when="signed-in">
-          <ULink class="mr-5" to="/dashboard">Dashboard</ULink>
+          <UButton
+            to="/dashboard"
+            variant="solid"
+            color="neutral"
+            class="mr-3 ring-1 ring-inset ring-default"
+          >
+            Dashboard
+          </UButton>
           <UserButton class="mr-3" />
         </Show>
       </template>
@@ -20,7 +45,7 @@
     <!-- 53F567 -->
     <main class="p-6">
       <UContainer class="max-w-250 h-screen h-[98%]">
-        <slot/>
+        <slot />
       </UContainer>
     </main>
   </div>
