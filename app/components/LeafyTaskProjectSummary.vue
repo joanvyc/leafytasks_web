@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Project } from '~/types/api'
+import type { Project, TaskSummary } from '~/types/api'
 
 const open = defineModel<boolean>()
 
@@ -14,39 +14,23 @@ const props = defineProps({
   }
 })
 
-const pending_project = null
 const project = props.value
 
-//  const { data: tasks, pending: pending_tasks, error: error_tasks } =
-//    await useApiFetch(`/v1/orgs/${props.orgUrlName}/projects/${props.value?.url_name}/tasks-leafs`, {
-//      lazy: true,
-//    });
-const tasks = [
+const { data: tasks, status, execute } = useApiFetch<TaskSummary[]>(
+  `/v1/orgs/${props.orgUrlName}/projects/${project.url_name}/tasks`,
   {
-    id: 1,
-    title: 'Dummy task',
-    path: 'Task one -> Task two -> Task 3 -> Dummy task',
-    status: 'done'
-  },
-  {
-    id: 2,
-    title: 'Dummy task',
-    path: 'Task one -> Task two -> Task 3 -> Dummy task',
-    status: 'blocked'
-  },
-  {
-    id: 3,
-    title: 'Dummy task',
-    path: 'Task one -> Task two -> Task 3 -> Dummy task',
-    status: 'wip'
-  },
-  {
-    id: 4,
-    title: 'Dummy task',
-    path: 'Task one -> Task two -> Task 3 -> Dummy task',
-    status: 'pending'
+    key: `leaftasks-${props.orgUrlName}-${project.url_name}`,
+    method: 'GET',
+    query: { leafs: true },
+    default: () => [],
+    immediate: false
   }
-]
+)
+
+// Load leaf tasks lazily the first time the project is expanded.
+watch(open, (isOpen) => {
+  if (isOpen && status.value === 'idle') execute()
+}, { immediate: true })
 
 function getToggleIcon() {
   return open.value
@@ -56,11 +40,7 @@ function getToggleIcon() {
 </script>
 
 <template>
-  <UPlaceholder
-    v-if="pending_project === 'pending'"
-    class="h-8"
-  />
-  <article v-else>
+  <article>
     <div class="flex mt-3 mr-2">
       <UButton
         variant="ghost"
@@ -89,6 +69,16 @@ function getToggleIcon() {
   >
     {{ props.value?.description }}
     <USeparator />
+    <UPlaceholder
+      v-if="status === 'pending'"
+      class="h-8 m-1"
+    />
+    <p
+      v-else-if="!tasks?.length"
+      class="text-sm text-neutral-500 m-1"
+    >
+      No tasks here yet.
+    </p>
     <article
       v-for="task in tasks"
       :key="task.id"
@@ -98,12 +88,7 @@ function getToggleIcon() {
           :to="`/orgs/${props.orgUrlName}/projects/${project.url_name}/tasks/${task.id}`"
           class="flex justify-between items-center"
         >
-          <UTooltip
-            :text="task.path"
-            class="text-md font-semibold"
-          >
-            {{ task.title }}
-          </UTooltip>
+          <span class="text-md font-semibold">{{ task.title }}</span>
 
           <LTStatus :status="task.status" />
         </ULink>
