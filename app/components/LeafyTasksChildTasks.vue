@@ -32,21 +32,37 @@ const tasksUrl = `/v1/orgs/${props.orgUrlName}/projects/${props.projectUrlName}/
 const taskScope = `${props.orgUrlName}/${props.projectUrlName}/${props.taskId ?? 'root'}`
 const parentId = props.taskId ? Number(props.taskId) : null
 
-const { data: allTasks, refresh: refreshAllTasks } = await useApiFetch<TaskSummary[]>(
-  tasksUrl,
-  { key: `tasks-${taskScope}-all`, method: 'GET', default: () => [] }
+// On a task page we ask the API directly for this task's sub-tasks via the
+// dedicated `/sub` endpoint; on a project page we list every project task and
+// keep the root-level ones.
+const subUrl = props.taskId ? `${tasksUrl}/${props.taskId}/sub` : tasksUrl
+
+// `all` shows every task; `actionable` hides tasks still waiting on dependencies.
+const actionableOnly = ref(false)
+const filter = computed(() => (actionableOnly.value ? 'actionable' : 'all'))
+
+// The `/sub` endpoint splits this task's sub-tasks (`leafs=false`) from its leaf
+// tasks (`leafs=true`) and honours the `filter` query param for both.
+const subQuery = props.taskId ? { leafs: false, filter } : {}
+const leafQuery = props.taskId ? { leafs: true, filter } : { leafs: true }
+
+const { data: subList, refresh: refreshSubtasks } = await useApiFetch<TaskSummary[]>(
+  subUrl,
+  { key: `tasks-${taskScope}-sub`, method: 'GET', query: subQuery, default: () => [] }
 )
 const { data: leafs, refresh: refreshLeafs } = await useApiFetch<TaskSummary[]>(
-  tasksUrl,
-  { key: `tasks-${taskScope}-leafs`, method: 'GET', query: { leafs: true }, default: () => [] }
+  subUrl,
+  { key: `tasks-${taskScope}-leafs`, method: 'GET', query: leafQuery, default: () => [] }
 )
 
-// Direct children of the current scope: the project's root tasks on a project
-// page, or this task's sub-tasks on a task page.
-const subtasks = computed(() => (allTasks.value ?? []).filter(t => t.parent_id === parentId))
+// The `/sub` endpoint already returns this task's direct sub-tasks; on a project
+// page we get every task, so keep only the root-level ones.
+const subtasks = computed(() =>
+  props.taskId ? (subList.value ?? []) : (subList.value ?? []).filter(t => t.parent_id === parentId)
+)
 
 function refreshTasks() {
-  return Promise.all([refreshAllTasks(), refreshLeafs()])
+  return Promise.all([refreshSubtasks(), refreshLeafs()])
 }
 
 function newTaskPrompt(id: number, link_as: LinkAs) {
@@ -125,7 +141,15 @@ const task_items = [
 
 <template>
   <div>
-    <div class="flex justify-end mb-2">
+    <div
+      class="flex items-center mb-2"
+      :class="taskId ? 'justify-between' : 'justify-end'"
+    >
+      <USwitch
+        v-if="taskId"
+        v-model="actionableOnly"
+        label="Actionable only"
+      />
       <UButton
         size="sm"
         icon="material-symbols:add-rounded"
