@@ -202,10 +202,13 @@ const task_items = [
       :items="task_items"
       variant="link"
     >
-      <template
-        v-if="subtasks?.length"
-        #subtasks
-      >
+      <template #subtasks>
+        <p
+          v-if="!subtasks.length"
+          class="text-sm text-neutral-500 text-center py-4"
+        >
+          No tasks here yet.
+        </p>
         <article
           v-for="task in subtasks"
           :key="task.id"
@@ -301,10 +304,13 @@ const task_items = [
           </div>
         </article>
       </template>
-      <template
-        v-if="leafs?.length"
-        #leaftasks
-      >
+      <template #leaftasks>
+        <p
+          v-if="!leafs?.length"
+          class="text-sm text-neutral-500 text-center py-4"
+        >
+          No tasks here yet.
+        </p>
         <article
           v-for="task in leafs"
           :key="task.id"
