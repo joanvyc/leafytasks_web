@@ -236,9 +236,15 @@ const task_items = [
           <div :class="['border rounded-md mb-1', taskTint(task.actionable)]">
             <div class="flex justify-between items-center">
               <div>
-                <ULink :to="`/orgs/${props.orgUrlName}/projects/${props.projectUrlName}/tasks/${task.id}`">
-                  <h2 class="m-2">{{ task.title }}</h2>
-                </ULink>
+                <LeafyTaskHoverCard
+                  :org-url-name="props.orgUrlName"
+                  :project-url-name="props.projectUrlName ?? ''"
+                  :task-id="task.id"
+                >
+                  <ULink :to="`/orgs/${props.orgUrlName}/projects/${props.projectUrlName}/tasks/${task.id}`">
+                    <h2 class="m-2">{{ task.title }}</h2>
+                  </ULink>
+                </LeafyTaskHoverCard>
               </div>
               <div>
                 <UTooltip text="New sub-task">
@@ -336,9 +342,15 @@ const task_items = [
           :key="task.id"
         >
           <div :class="['border rounded-md mb-1', taskTint(task.actionable)]">
-            <ULink :to="`/orgs/${props.orgUrlName}/projects/${props.projectUrlName}/tasks/${task.id}`">
-              <h2 class="m-2">{{ task.title }}</h2>
-            </ULink>
+            <LeafyTaskHoverCard
+              :org-url-name="props.orgUrlName"
+              :project-url-name="props.projectUrlName ?? ''"
+              :task-id="task.id"
+            >
+              <ULink :to="`/orgs/${props.orgUrlName}/projects/${props.projectUrlName}/tasks/${task.id}`">
+                <h2 class="m-2">{{ task.title }}</h2>
+              </ULink>
+            </LeafyTaskHoverCard>
           </div>
         </article>
       </template>

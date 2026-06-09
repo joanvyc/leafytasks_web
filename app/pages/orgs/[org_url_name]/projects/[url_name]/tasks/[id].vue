@@ -290,7 +290,13 @@ function commentAndComplete() {
               :class="['flex items-center gap-2 mb-1 rounded border px-2 py-1', taskTint(dep.actionable)]"
             >
               <LTStatus :status="dep.status" />
-              <ULink :to="`/orgs/${org_url_name}/projects/${url_name}/tasks/${dep.id}`">{{ dep.title }}</ULink>
+              <LeafyTaskHoverCard
+                :org-url-name="org_url_name"
+                :project-url-name="url_name"
+                :task-id="dep.id"
+              >
+                <ULink :to="`/orgs/${org_url_name}/projects/${url_name}/tasks/${dep.id}`">{{ dep.title }}</ULink>
+              </LeafyTaskHoverCard>
             </div>
             <UInput
               v-model="dependencySearch"

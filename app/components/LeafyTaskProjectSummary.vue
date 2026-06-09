@@ -94,14 +94,20 @@ function getToggleIcon() {
       :key="task.id"
     >
       <div :class="['m-1 px-3 py-1 rounded border', taskTint(task.actionable)]">
-        <ULink
-          :to="`/orgs/${props.orgUrlName}/projects/${project.url_name}/tasks/${task.id}`"
-          class="flex justify-between items-center"
+        <LeafyTaskHoverCard
+          :org-url-name="props.orgUrlName"
+          :project-url-name="project.url_name"
+          :task-id="task.id"
         >
-          <span class="text-md font-semibold">{{ task.title }}</span>
+          <ULink
+            :to="`/orgs/${props.orgUrlName}/projects/${project.url_name}/tasks/${task.id}`"
+            class="flex justify-between items-center"
+          >
+            <span class="text-md font-semibold">{{ task.title }}</span>
 
-          <LTStatus :status="task.status" />
-        </ULink>
+            <LTStatus :status="task.status" />
+          </ULink>
+        </LeafyTaskHoverCard>
       </div>
     </article>
   </div>
