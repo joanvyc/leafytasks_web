@@ -41,15 +41,31 @@ async function originsFor(dep: TaskSummary): Promise<TaskSummary[]> {
   return [...found.values()]
 }
 
+// There is no ancestors endpoint, so walk the parent_id chain ourselves,
+// fetching each parent task. Returned root-first (root … immediate parent).
+async function ancestorsOf(task: TaskSummary): Promise<TaskSummary[]> {
+  const chain: TaskSummary[] = []
+  const visited = new Set<number>([task.id])
+  let parentId = task.parent_id
+  while (parentId != null && !visited.has(parentId)) {
+    visited.add(parentId)
+    const parent = await $api<TaskSummary>(taskUrl(parentId))
+    if (!parent) break
+    chain.push(parent)
+    parentId = parent.parent_id
+  }
+  return chain.reverse()
+}
+
 async function load() {
   if (loaded.value || loading.value) return
   loading.value = true
   try {
-    const [anc, direct] = await Promise.all([
-      $api<TaskSummary[]>(`${taskUrl(props.taskId)}/ancestors`),
+    const [task, direct] = await Promise.all([
+      $api<TaskSummary>(taskUrl(props.taskId)),
       $api<TaskSummary[]>(`${taskUrl(props.taskId)}/deps`, { query: { filter: 'all' } })
     ])
-    ancestors.value = anc ?? []
+    ancestors.value = task ? await ancestorsOf(task) : []
     dependencies.value = await Promise.all(
       (direct ?? []).map(async dep => ({ dep, origins: await originsFor(dep) }))
     )
