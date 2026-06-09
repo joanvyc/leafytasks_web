@@ -35,9 +35,8 @@ function createdAtMs(value: ApiDateTime): number {
 }
 
 // There is no project-level status endpoint: the project Activity feed is the
-// merge of every root task's status posts, sorted by created_at. The "Include
-// subtasks" switch drives each task's `subtasks` param.
-const recursive = ref(false)
+// merge of every root task's status posts (always including subtasks), sorted
+// by created_at.
 const tasksUrl = `/v1/orgs/${org_url_name}/projects/${url_name}/tasks`
 
 const { data: updates } = await useAsyncData(
@@ -46,12 +45,12 @@ const { data: updates } = await useAsyncData(
     const tasks = await $api<TaskSummary[]>(tasksUrl) ?? []
     const roots = tasks.filter(t => t.parent_id === null)
     const lists = await Promise.all(roots.map(r =>
-      $api<StatusPost[]>(`${tasksUrl}/${r.id}/status`, { query: { subtasks: recursive.value } })
+      $api<StatusPost[]>(`${tasksUrl}/${r.id}/status`, { query: { subtasks: true } })
         .catch(() => [] as StatusPost[])
     ))
     return lists.flat().sort((a, b) => createdAtMs(a.created_at) - createdAtMs(b.created_at))
   },
-  { watch: [recursive], default: () => [] }
+  { default: () => [] }
 )
 </script>
 
@@ -117,12 +116,6 @@ const { data: updates } = await useAsyncData(
               Activity
             </h2>
           </template>
-          <div class="flex justify-end mb-2">
-            <USwitch
-              v-model="recursive"
-              label="Include subtasks"
-            />
-          </div>
           <p
             v-if="!updates?.length"
             class="text-sm text-neutral-500 text-center py-4"
