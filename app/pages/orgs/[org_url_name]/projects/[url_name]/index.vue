@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import type { ApiDateTime, Project, ProjectStatus, StatusUpdate } from '~/types/api'
+import type { ApiDateTime, Project, StatusPost, TaskSummary } from '~/types/api'
 
 const route = useRoute()
 const org_url_name = route.params.org_url_name as string
 const url_name = route.params.url_name as string
+
+const { $api } = useNuxtApp()
 
 const { data: projects, error: projectsError } = await useApiFetch<Project[]>(
   `/v1/orgs/${org_url_name}/projects`,
@@ -18,31 +20,6 @@ if (projectsError.value || !project.value) {
   })
 }
 
-const recursive = ref(false)
-const updates = ref<StatusUpdate[]>([
-  {
-    status: 'active',
-    description: 'Project kicked off and initial scope agreed.',
-    author: 'Alice Example',
-    created_at: '2026-05-01'
-  },
-  {
-    status: 'on-hold',
-    description: 'Waiting on partner sign-off before continuing.',
-    author: 'Bob Example',
-    created_at: '2026-05-10'
-  }
-])
-
-type BadgeColor = 'error' | 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'neutral'
-
-const status_config: Record<ProjectStatus, { color: BadgeColor, label: string }> = {
-  'active': { color: 'success', label: 'Active' },
-  'on-hold': { color: 'warning', label: 'On Hold' },
-  'completed': { color: 'neutral', label: 'Completed' },
-  'archived': { color: 'neutral', label: 'Archived' }
-}
-
 function formatDate(value: ApiDateTime | null | undefined): string {
   if (!value) return ''
   const [year, ordinal, hour, minute, second] = value
@@ -52,7 +29,30 @@ function formatDate(value: ApiDateTime | null | undefined): string {
     .replace('T', ' ')
 }
 
-const next_update_text = ref('')
+function createdAtMs(value: ApiDateTime): number {
+  const [year, ordinal, hour, minute, second] = value
+  return Date.UTC(year, 0, ordinal, hour, minute, second)
+}
+
+// There is no project-level status endpoint: the project Activity feed is the
+// merge of every root task's status posts, sorted by created_at. The "Include
+// subtasks" switch drives each task's `subtasks` param.
+const recursive = ref(false)
+const tasksUrl = `/v1/orgs/${org_url_name}/projects/${url_name}/tasks`
+
+const { data: updates } = await useAsyncData(
+  `project-status-${org_url_name}-${url_name}`,
+  async () => {
+    const tasks = await $api<TaskSummary[]>(tasksUrl) ?? []
+    const roots = tasks.filter(t => t.parent_id === null)
+    const lists = await Promise.all(roots.map(r =>
+      $api<StatusPost[]>(`${tasksUrl}/${r.id}/status`, { query: { subtasks: recursive.value } })
+        .catch(() => [] as StatusPost[])
+    ))
+    return lists.flat().sort((a, b) => createdAtMs(a.created_at) - createdAtMs(b.created_at))
+  },
+  { watch: [recursive], default: () => [] }
+)
 </script>
 
 <template>
@@ -117,41 +117,37 @@ const next_update_text = ref('')
               Activity
             </h2>
           </template>
-          <UTextarea
-            v-model="next_update_text"
-            class="w-full mb-2"
-            placeholder="Add a project update..."
-          />
-          <div class="flex justify-end mb-6">
-            <UButton>Submit</UButton>
-          </div>
           <div class="flex justify-end mb-2">
             <USwitch
               v-model="recursive"
               label="Include subtasks"
             />
           </div>
+          <p
+            v-if="!updates?.length"
+            class="text-sm text-neutral-500 text-center py-4"
+          >
+            No activity yet.
+          </p>
           <article
             v-for="(update, i) in updates || []"
             :key="i"
             class="mt-4"
           >
-            <UUser
-              class="mb-2"
-              :name="update.author"
-              :avatar="{
-                src: 'https://gitlab.pm.bsc.es/uploads/-/system/user/avatar/216/avatar.png',
-                loading: 'lazy'
-              }"
-            />
             <UCard>
               <template #header>
-                <UBadge
-                  :color="status_config[update.status as ProjectStatus].color"
-                  variant="soft"
-                >
-                  {{ status_config[update.status as ProjectStatus].label }}
-                </UBadge>
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-2">
+                    <LTStatus :status="update.status" />
+                    <ULink
+                      :to="`/orgs/${org_url_name}/projects/${url_name}/tasks/${update.task_id}`"
+                      class="text-sm font-medium"
+                    >
+                      {{ update.task_title }}
+                    </ULink>
+                  </div>
+                  <span class="text-xs text-neutral-500">{{ formatDate(update.created_at) }}</span>
+                </div>
               </template>
               <p class="text-sm">
                 {{ update.description }}
