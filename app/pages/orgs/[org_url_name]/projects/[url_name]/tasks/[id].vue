@@ -18,9 +18,13 @@ if (error.value || !task.value) {
   })
 }
 
+// `all` shows every dependency; `actionable` hides those waiting on their own deps.
+const depsActionableOnly = ref(false)
+const depsFilter = computed(() => (depsActionableOnly.value ? 'actionable' : 'all'))
+
 const { data: dependencies } = await useApiFetch<TaskSummary[]>(
   `/v1/orgs/${org_url_name}/projects/${url_name}/tasks/${taskId}/deps`,
-  { method: 'GET', query: { filter: 'all' }, default: () => [] }
+  { method: 'GET', query: { filter: depsFilter }, default: () => [] }
 )
 
 const recursive = ref(false)
@@ -270,13 +274,20 @@ function commentAndComplete() {
           </div>
           <USeparator />
           <div>
-            <p class="text-neutral-500 mb-1">
-              Dependencies
-            </p>
+            <div class="flex items-center justify-between mb-1">
+              <p class="text-neutral-500">
+                Dependencies
+              </p>
+              <USwitch
+                v-model="depsActionableOnly"
+                label="Actionable only"
+                size="xs"
+              />
+            </div>
             <div
               v-for="dep in dependencies"
               :key="dep.id"
-              class="flex items-center gap-2 mb-1"
+              :class="['flex items-center gap-2 mb-1 rounded border px-2 py-1', taskTint(dep.actionable)]"
             >
               <LTStatus :status="dep.status" />
               <ULink :to="`/orgs/${org_url_name}/projects/${url_name}/tasks/${dep.id}`">{{ dep.title }}</ULink>

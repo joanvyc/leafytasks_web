@@ -43,8 +43,8 @@ const filter = computed(() => (actionableOnly.value ? 'actionable' : 'all'))
 
 // The `/sub` endpoint splits this task's sub-tasks (`leafs=false`) from its leaf
 // tasks (`leafs=true`) and honours the `filter` query param for both.
-const subQuery = props.taskId ? { leafs: false, filter } : {}
-const leafQuery = props.taskId ? { leafs: true, filter } : { leafs: true }
+const subQuery = props.taskId ? { leafs: false, filter } : { filter }
+const leafQuery = props.taskId ? { leafs: true, filter } : { leafs: true, filter }
 
 const { data: subList, refresh: refreshSubtasks } = await useApiFetch<TaskSummary[]>(
   subUrl,
@@ -141,12 +141,8 @@ const task_items = [
 
 <template>
   <div>
-    <div
-      class="flex items-center mb-2"
-      :class="taskId ? 'justify-between' : 'justify-end'"
-    >
+    <div class="flex items-center justify-between mb-2">
       <USwitch
-        v-if="taskId"
         v-model="actionableOnly"
         label="Actionable only"
       />
@@ -237,7 +233,7 @@ const task_items = [
           v-for="task in subtasks"
           :key="task.id"
         >
-          <div class="border border-[#AAAAAA] bg-[#FFFFFF] rounded-md mb-1">
+          <div :class="['border rounded-md mb-1', taskTint(task.actionable)]">
             <div class="flex justify-between items-center">
               <div>
                 <ULink :to="`/orgs/${props.orgUrlName}/projects/${props.projectUrlName}/tasks/${task.id}`">
@@ -339,7 +335,7 @@ const task_items = [
           v-for="task in leafs"
           :key="task.id"
         >
-          <div class="border border-[#AAAAAA] bg-[#FFFFFF] rounded-md mb-1">
+          <div :class="['border rounded-md mb-1', taskTint(task.actionable)]">
             <ULink :to="`/orgs/${props.orgUrlName}/projects/${props.projectUrlName}/tasks/${task.id}`">
               <h2 class="m-2">{{ task.title }}</h2>
             </ULink>

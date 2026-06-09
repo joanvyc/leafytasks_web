@@ -61,6 +61,7 @@ export interface TaskSummary {
   updated_at: ApiDateTime
   status: TaskStatus
   has_active_dependencies: boolean
+  actionable: boolean
 }
 
 export interface StatusUpdate {

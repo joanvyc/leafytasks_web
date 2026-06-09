@@ -16,12 +16,16 @@ const props = defineProps({
 
 const project = props.value
 
+// `all` shows every leaf task; `actionable` hides those waiting on dependencies.
+const actionableOnly = ref(false)
+const filter = computed(() => (actionableOnly.value ? 'actionable' : 'all'))
+
 const { data: tasks, status, execute } = useApiFetch<TaskSummary[]>(
   `/v1/orgs/${props.orgUrlName}/projects/${project.url_name}/tasks`,
   {
     key: `leaftasks-${props.orgUrlName}-${project.url_name}`,
     method: 'GET',
-    query: { leafs: true },
+    query: { leafs: true, filter },
     default: () => [],
     immediate: false
   }
@@ -69,6 +73,12 @@ function getToggleIcon() {
   >
     {{ props.value?.description }}
     <USeparator />
+    <div class="flex justify-end m-1">
+      <USwitch
+        v-model="actionableOnly"
+        label="Actionable only"
+      />
+    </div>
     <UPlaceholder
       v-if="status === 'pending'"
       class="h-8 m-1"
@@ -83,7 +93,7 @@ function getToggleIcon() {
       v-for="task in tasks"
       :key="task.id"
     >
-      <div class="m-1 px-3 py-1 rounded bg-[#EEFFEE] hover:bg-[#E9F9E9] border border-[#77DD77]">
+      <div :class="['m-1 px-3 py-1 rounded border', taskTint(task.actionable)]">
         <ULink
           :to="`/orgs/${props.orgUrlName}/projects/${project.url_name}/tasks/${task.id}`"
           class="flex justify-between items-center"
