@@ -10,7 +10,7 @@ const props = defineProps<{
 
 // Ancestor chain ordered root → nearest parent. The endpoint includes the task
 // itself, so drop that entry to leave just the ancestors.
-const { data: ancestors } = useApiFetch<TaskSummary[]>(
+const { data: ancestors, status } = useApiFetch<TaskSummary[]>(
   `/v1/orgs/${props.orgUrlName}/projects/${props.projectUrlName}/tasks/${props.taskId}/ancestors`,
   { method: 'GET', lazy: true, default: () => [] }
 )
@@ -28,8 +28,12 @@ function taskLink(id: number | string): string {
 </script>
 
 <template>
+  <USkeleton
+    v-if="status === 'pending'"
+    class="h-5 w-48"
+  />
   <nav
-    v-if="root"
+    v-else-if="root"
     class="flex items-center flex-wrap gap-1 text-sm text-neutral-500"
   >
     <ULink
