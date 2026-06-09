@@ -115,7 +115,12 @@ watch(open, (isOpen) => {
               :class="['flex items-center gap-2 rounded border px-2 py-1 mb-1', taskTint(a.actionable)]"
             >
               <LTStatus :status="a.status" />
-              <span class="truncate">{{ a.title }}</span>
+              <ULink
+                :to="`/orgs/${orgUrlName}/projects/${projectUrlName}/tasks/${a.id}`"
+                class="truncate"
+              >
+                {{ a.title }}
+              </ULink>
             </div>
           </section>
 
@@ -136,7 +141,12 @@ watch(open, (isOpen) => {
             >
               <div :class="['flex items-center gap-2 rounded border px-2 py-1', taskTint(d.dep.actionable)]">
                 <LTStatus :status="d.dep.status" />
-                <span class="truncate">{{ d.dep.title }}</span>
+                <ULink
+                  :to="`/orgs/${orgUrlName}/projects/${projectUrlName}/tasks/${d.dep.id}`"
+                  class="truncate"
+                >
+                  {{ d.dep.title }}
+                </ULink>
               </div>
               <div
                 v-for="o in d.origins"
@@ -144,7 +154,12 @@ watch(open, (isOpen) => {
                 :class="['flex items-center gap-2 rounded border px-2 py-1 mt-1 ml-4', taskTint(o.actionable)]"
               >
                 <LTStatus :status="o.status" />
-                <span class="truncate">{{ o.title }}</span>
+                <ULink
+                  :to="`/orgs/${orgUrlName}/projects/${projectUrlName}/tasks/${o.id}`"
+                  class="truncate"
+                >
+                  {{ o.title }}
+                </ULink>
               </div>
             </div>
           </section>
