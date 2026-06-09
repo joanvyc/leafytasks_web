@@ -55,13 +55,14 @@ async function load() {
   if (loaded.value || loading.value) return
   loading.value = true
   try {
-    // The /ancestors endpoint already returns the chain root → nearest parent,
-    // which is the display order, so no post-processing is needed.
+    // The /ancestors endpoint returns the chain root → nearest parent in display
+    // order, but includes the task itself — drop that entry.
+    const current = String(props.taskId)
     const [anc, direct] = await Promise.all([
       $api<TaskSummary[]>(`${taskUrl(props.taskId)}/ancestors`),
       $api<TaskSummary[]>(`${taskUrl(props.taskId)}/deps`, { query: { filter: 'all' } })
     ])
-    ancestors.value = anc ?? []
+    ancestors.value = (anc ?? []).filter(a => String(a.id) !== current)
     dependencies.value = await Promise.all(
       (direct ?? []).map(async dep => ({ dep, origins: await originsFor(dep) }))
     )

@@ -8,21 +8,19 @@ const props = defineProps<{
   title: string
 }>()
 
-// Ancestor chain ordered root → nearest parent (current task excluded).
+// Ancestor chain ordered root → nearest parent. The endpoint includes the task
+// itself, so drop that entry to leave just the ancestors.
 const { data: ancestors } = await useApiFetch<TaskSummary[]>(
   `/v1/orgs/${props.orgUrlName}/projects/${props.projectUrlName}/tasks/${props.taskId}/ancestors`,
   { method: 'GET', default: () => [] }
 )
 
-const root = computed(() => ancestors.value?.[0] ?? null)
-const parent = computed(() => {
-  const a = ancestors.value ?? []
-  return a.length >= 2 ? a[a.length - 1] : null
-})
-const middle = computed(() => {
-  const a = ancestors.value ?? []
-  return a.length >= 3 ? a.slice(1, -1) : []
-})
+const chain = computed(() =>
+  (ancestors.value ?? []).filter(a => String(a.id) !== String(props.taskId))
+)
+const root = computed(() => chain.value[0] ?? null)
+const parent = computed(() => (chain.value.length >= 2 ? chain.value[chain.value.length - 1] : null))
+const middle = computed(() => (chain.value.length >= 3 ? chain.value.slice(1, -1) : []))
 
 function taskLink(id: number | string): string {
   return `/orgs/${props.orgUrlName}/projects/${props.projectUrlName}/tasks/${id}`
@@ -31,7 +29,7 @@ function taskLink(id: number | string): string {
 
 <template>
   <nav
-    v-if="ancestors?.length && root"
+    v-if="root"
     class="flex items-center flex-wrap gap-1 text-sm text-neutral-500"
   >
     <ULink
@@ -52,7 +50,7 @@ function taskLink(id: number | string): string {
         <template #content>
           <div class="p-2 flex flex-col gap-1 text-sm w-64">
             <ULink
-              v-for="a in ancestors"
+              v-for="a in chain"
               :key="a.id"
               :to="taskLink(a.id)"
               :class="['flex items-center gap-2 rounded border px-2 py-1', taskTint(a.actionable)]"
