@@ -7,18 +7,20 @@ const url_name = route.params.url_name as string
 
 const { $api } = useNuxtApp()
 
-const { data: projects, error: projectsError } = await useApiFetch<Project[]>(
+const { data: projects, error: projectsError, status: projectStatus } = useApiFetch<Project[]>(
   `/v1/orgs/${org_url_name}/projects`,
-  { method: 'GET', default: () => [] }
+  { method: 'GET', lazy: true, default: () => [] }
 )
 const project = computed(() => projects.value?.find(p => p.url_name === url_name) ?? null)
-if (projectsError.value || !project.value) {
-  throw createError({
-    statusCode: projectsError.value?.statusCode ?? 404,
-    statusMessage: projectsError.value?.statusMessage ?? 'Project not found',
-    fatal: true
-  })
-}
+watch(projectStatus, (s) => {
+  if (s === 'error' || (s === 'success' && !project.value)) {
+    showError(createError({
+      statusCode: projectsError.value?.statusCode ?? 404,
+      statusMessage: projectsError.value?.statusMessage ?? 'Project not found',
+      fatal: true
+    }))
+  }
+})
 
 function formatDate(value: ApiDateTime | null | undefined): string {
   if (!value) return ''
@@ -39,7 +41,7 @@ function createdAtMs(value: ApiDateTime): number {
 // by created_at.
 const tasksUrl = `/v1/orgs/${org_url_name}/projects/${url_name}/tasks`
 
-const { data: updates } = await useAsyncData(
+const { data: updates, status: updatesStatus } = useAsyncData(
   `project-status-${org_url_name}-${url_name}`,
   async () => {
     const tasks = await $api<TaskSummary[]>(tasksUrl) ?? []
@@ -50,7 +52,7 @@ const { data: updates } = await useAsyncData(
     ))
     return lists.flat().sort((a, b) => createdAtMs(a.created_at) - createdAtMs(b.created_at))
   },
-  { default: () => [] }
+  { lazy: true, default: () => [] }
 )
 </script>
 
@@ -74,15 +76,30 @@ const { data: updates } = await useAsyncData(
       </div>
     </div>
 
+    <USkeleton
+      v-if="projectStatus === 'pending'"
+      class="h-9 w-72"
+    />
     <h1
-      v-if="project"
+      v-else-if="project"
       class="text-3xl font-bold"
     >
       {{ project.title }}
     </h1>
 
     <div
-      v-if="project"
+      v-if="projectStatus === 'pending'"
+      class="grid grid-cols-3 gap-4 items-start"
+    >
+      <div class="col-span-2 flex flex-col gap-4">
+        <LTSkeletonCard :lines="2" />
+        <LTSkeletonCard :lines="4" />
+      </div>
+      <LTSkeletonCard :lines="3" />
+    </div>
+
+    <div
+      v-else-if="project"
       class="grid grid-cols-3 gap-4 items-start"
     >
       <!-- Main content -->
@@ -116,8 +133,18 @@ const { data: updates } = await useAsyncData(
               Activity
             </h2>
           </template>
+          <div
+            v-if="updatesStatus === 'pending'"
+            class="flex flex-col gap-4"
+          >
+            <LTSkeletonCard
+              v-for="i in 2"
+              :key="i"
+              :lines="2"
+            />
+          </div>
           <p
-            v-if="!updates?.length"
+            v-else-if="!updates?.length"
             class="text-sm text-neutral-500 text-center py-4"
           >
             No activity yet.

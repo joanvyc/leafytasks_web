@@ -5,9 +5,9 @@ const props = defineProps<{
   org: Org
 }>()
 
-const { data: projects } = await useApiFetch<Project[]>(
+const { data: projects, status } = useApiFetch<Project[]>(
   `/v1/orgs/${props.org.url_name}/projects`,
-  { method: 'GET', default: () => [] }
+  { method: 'GET', lazy: true, default: () => [] }
 )
 
 const open_project = ref<Record<string, boolean>>({})
@@ -37,8 +37,18 @@ watchEffect(() => {
       </UButton>
     </div>
 
+    <div
+      v-if="status === 'pending'"
+      class="flex flex-col gap-2 ml-3 mb-2"
+    >
+      <USkeleton
+        v-for="i in 2"
+        :key="i"
+        class="h-8 w-full"
+      />
+    </div>
     <p
-      v-if="!projects?.length"
+      v-else-if="!projects?.length"
       class="text-sm text-neutral-500 ml-3 mb-2"
     >
       No projects yet.

@@ -10,9 +10,9 @@ const props = defineProps<{
 
 // Ancestor chain ordered root → nearest parent. The endpoint includes the task
 // itself, so drop that entry to leave just the ancestors.
-const { data: ancestors } = await useApiFetch<TaskSummary[]>(
+const { data: ancestors } = useApiFetch<TaskSummary[]>(
   `/v1/orgs/${props.orgUrlName}/projects/${props.projectUrlName}/tasks/${props.taskId}/ancestors`,
-  { method: 'GET', default: () => [] }
+  { method: 'GET', lazy: true, default: () => [] }
 )
 
 const chain = computed(() =>

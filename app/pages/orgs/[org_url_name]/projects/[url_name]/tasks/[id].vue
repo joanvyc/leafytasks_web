@@ -6,31 +6,33 @@ const org_url_name = route.params.org_url_name as string
 const url_name = route.params.url_name as string
 const taskId = route.params.id as string
 
-const { data: task, error, refresh: refreshTask } = await useApiFetch<TaskSummary>(
+const { data: task, error, status: taskStatus, refresh: refreshTask } = useApiFetch<TaskSummary>(
   `/v1/orgs/${org_url_name}/projects/${url_name}/tasks/${taskId}`,
-  { method: 'GET' }
+  { method: 'GET', lazy: true }
 )
-if (error.value || !task.value) {
-  throw createError({
-    statusCode: error.value?.statusCode ?? 404,
-    statusMessage: error.value?.statusMessage ?? 'Task not found',
-    fatal: true
-  })
-}
+watch(taskStatus, (s) => {
+  if (s === 'error' || (s === 'success' && !task.value)) {
+    showError(createError({
+      statusCode: error.value?.statusCode ?? 404,
+      statusMessage: error.value?.statusMessage ?? 'Task not found',
+      fatal: true
+    }))
+  }
+})
 
 // `all` shows every dependency; `actionable` hides those waiting on their own deps.
 const depsActionableOnly = ref(false)
 const depsFilter = computed(() => (depsActionableOnly.value ? 'actionable' : 'all'))
 
-const { data: dependencies } = await useApiFetch<TaskSummary[]>(
+const { data: dependencies, status: depsStatus } = useApiFetch<TaskSummary[]>(
   `/v1/orgs/${org_url_name}/projects/${url_name}/tasks/${taskId}/deps`,
-  { method: 'GET', query: { filter: depsFilter }, default: () => [] }
+  { method: 'GET', lazy: true, query: { filter: depsFilter }, default: () => [] }
 )
 
 const recursive = ref(false)
-const { data: status_updates, refresh: refreshStatus } = await useApiFetch<StatusPost[]>(
+const { data: status_updates, status: statusUpdatesStatus, refresh: refreshStatus } = useApiFetch<StatusPost[]>(
   `/v1/orgs/${org_url_name}/projects/${url_name}/tasks/${taskId}/status`,
-  { method: 'GET', query: { subtasks: recursive }, default: () => [] }
+  { method: 'GET', lazy: true, query: { subtasks: recursive }, default: () => [] }
 )
 
 const dependencySearch = ref('')
@@ -71,6 +73,10 @@ const status_options: { label: string, value: TaskStatus }[] = [
 
 const next_comment_text = ref('')
 const next_status = ref<TaskStatus>(task.value?.status ?? 'todo')
+// `task` is empty on first render (lazy fetch); sync the status selector once it loads.
+watch(task, (t) => {
+  if (t) next_status.value = t.status
+}, { once: true })
 
 async function postUpdate(status: TaskStatus) {
   await $apiFetch(`/v1/orgs/${org_url_name}/projects/${url_name}/tasks/${taskId}/status`, {
@@ -124,15 +130,30 @@ function commentAndComplete() {
       :title="task.title"
     />
 
+    <USkeleton
+      v-if="taskStatus === 'pending'"
+      class="h-9 w-80"
+    />
     <h1
-      v-if="task"
+      v-else-if="task"
       class="text-3xl font-bold"
     >
       {{ task.title }}
     </h1>
 
     <div
-      v-if="task"
+      v-if="taskStatus === 'pending'"
+      class="grid grid-cols-3 gap-4 items-start"
+    >
+      <div class="col-span-2 flex flex-col gap-4">
+        <LTSkeletonCard :lines="2" />
+        <LTSkeletonCard :lines="4" />
+      </div>
+      <LTSkeletonCard :lines="6" />
+    </div>
+
+    <div
+      v-else-if="task"
       class="grid grid-cols-3 gap-4 items-start"
     >
       <!-- Main content -->
@@ -196,6 +217,16 @@ function commentAndComplete() {
             <USwitch
               v-model="recursive"
               label="Include subtasks"
+            />
+          </div>
+          <div
+            v-if="statusUpdatesStatus === 'pending'"
+            class="flex flex-col gap-4"
+          >
+            <LTSkeletonCard
+              v-for="i in 2"
+              :key="i"
+              :lines="2"
             />
           </div>
           <article
@@ -295,6 +326,10 @@ function commentAndComplete() {
                 size="xs"
               />
             </div>
+            <USkeleton
+              v-if="depsStatus === 'pending'"
+              class="h-8 w-full mb-1"
+            />
             <div
               v-for="dep in dependencies"
               :key="dep.id"

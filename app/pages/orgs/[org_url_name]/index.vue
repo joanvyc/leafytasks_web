@@ -4,22 +4,24 @@ import type { Org, Project } from '~/types/api'
 const route = useRoute()
 const org_url_name = route.params.org_url_name as string
 
-const { data: orgs, error: orgsError } = await useApiFetch<Org[]>(
+const { data: orgs, error: orgsError, status: orgsStatus } = useApiFetch<Org[]>(
   '/v1/orgs',
-  { method: 'GET', default: () => [] }
+  { method: 'GET', lazy: true, default: () => [] }
 )
 const org = computed(() => orgs.value?.find(o => o.url_name === org_url_name) ?? null)
-if (orgsError.value || !org.value) {
-  throw createError({
-    statusCode: orgsError.value?.statusCode ?? 404,
-    statusMessage: orgsError.value?.statusMessage ?? 'Organization not found',
-    fatal: true
-  })
-}
+watch(orgsStatus, (s) => {
+  if (s === 'error' || (s === 'success' && !org.value)) {
+    showError(createError({
+      statusCode: orgsError.value?.statusCode ?? 404,
+      statusMessage: orgsError.value?.statusMessage ?? 'Organization not found',
+      fatal: true
+    }))
+  }
+})
 
-const { data: projects } = await useApiFetch<Project[]>(
+const { data: projects, status: projectsStatus } = useApiFetch<Project[]>(
   `/v1/orgs/${org_url_name}/projects`,
-  { method: 'GET', default: () => [] }
+  { method: 'GET', lazy: true, default: () => [] }
 )
 
 const open_project = ref<Record<string, boolean>>({})
@@ -135,8 +137,18 @@ const show_actionable = ref(true)
     </div>
 
     <UScrollArea>
+      <div
+        v-if="projectsStatus === 'pending'"
+        class="flex flex-col gap-2"
+      >
+        <USkeleton
+          v-for="i in 4"
+          :key="i"
+          class="h-10 w-full"
+        />
+      </div>
       <p
-        v-if="!projects?.length"
+        v-else-if="!projects?.length"
         class="text-sm text-neutral-500"
       >
         No projects yet.

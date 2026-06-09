@@ -46,13 +46,13 @@ const filter = computed(() => (actionableOnly.value ? 'actionable' : 'all'))
 const subQuery = props.taskId ? { leafs: false, filter } : { filter }
 const leafQuery = props.taskId ? { leafs: true, filter } : { leafs: true, filter }
 
-const { data: subList, refresh: refreshSubtasks } = await useApiFetch<TaskSummary[]>(
+const { data: subList, status: subStatus, refresh: refreshSubtasks } = useApiFetch<TaskSummary[]>(
   subUrl,
-  { key: `tasks-${taskScope}-sub`, method: 'GET', query: subQuery, default: () => [] }
+  { key: `tasks-${taskScope}-sub`, method: 'GET', lazy: true, query: subQuery, default: () => [] }
 )
-const { data: leafs, refresh: refreshLeafs } = await useApiFetch<TaskSummary[]>(
+const { data: leafs, status: leafStatus, refresh: refreshLeafs } = useApiFetch<TaskSummary[]>(
   subUrl,
-  { key: `tasks-${taskScope}-leafs`, method: 'GET', query: leafQuery, default: () => [] }
+  { key: `tasks-${taskScope}-leafs`, method: 'GET', lazy: true, query: leafQuery, default: () => [] }
 )
 
 // The `/sub` endpoint already returns this task's direct sub-tasks; on a project
@@ -223,8 +223,18 @@ const task_items = [
       variant="link"
     >
       <template #subtasks>
+        <div
+          v-if="subStatus === 'pending'"
+          class="flex flex-col gap-1"
+        >
+          <USkeleton
+            v-for="i in 3"
+            :key="i"
+            class="h-10 w-full"
+          />
+        </div>
         <p
-          v-if="!subtasks.length"
+          v-else-if="!subtasks.length"
           class="text-sm text-neutral-500 text-center py-4"
         >
           No tasks here yet.
@@ -331,8 +341,18 @@ const task_items = [
         </article>
       </template>
       <template #leaftasks>
+        <div
+          v-if="leafStatus === 'pending'"
+          class="flex flex-col gap-1"
+        >
+          <USkeleton
+            v-for="i in 3"
+            :key="i"
+            class="h-10 w-full"
+          />
+        </div>
         <p
-          v-if="!leafs?.length"
+          v-else-if="!leafs?.length"
           class="text-sm text-neutral-500 text-center py-4"
         >
           No tasks here yet.

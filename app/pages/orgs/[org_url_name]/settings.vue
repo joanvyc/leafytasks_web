@@ -11,18 +11,20 @@ const toast = useToast()
 const route = useRoute()
 const org_url_name = route.params.org_url_name as string
 
-const { data: orgs, error: orgsError } = await useApiFetch<Org[]>(
+const { data: orgs, error: orgsError, status: orgsStatus } = useApiFetch<Org[]>(
   '/v1/orgs',
-  { method: 'GET', default: () => [] }
+  { method: 'GET', lazy: true, default: () => [] }
 )
 const org = computed(() => orgs.value?.find(o => o.url_name === org_url_name) ?? null)
-if (orgsError.value || !org.value) {
-  throw createError({
-    statusCode: orgsError.value?.statusCode ?? 404,
-    statusMessage: orgsError.value?.statusMessage ?? 'Organization not found',
-    fatal: true
-  })
-}
+watch(orgsStatus, (s) => {
+  if (s === 'error' || (s === 'success' && !org.value)) {
+    showError(createError({
+      statusCode: orgsError.value?.statusCode ?? 404,
+      statusMessage: orgsError.value?.statusMessage ?? 'Organization not found',
+      fatal: true
+    }))
+  }
+})
 
 const members = ref<OrgMember[]>([
   { id: 'm-1', email: 'alice@example.com', name: 'Alice Example', role: 'owner' },
@@ -131,7 +133,16 @@ function roleColor(role: OrgRole): 'primary' | 'info' | 'neutral' {
       </UBadge>
     </div>
 
-    <h1 class="text-3xl font-bold">
+    <h1
+      v-if="orgsStatus === 'pending'"
+      class="text-3xl font-bold"
+    >
+      <USkeleton class="h-8 w-64" />
+    </h1>
+    <h1
+      v-else
+      class="text-3xl font-bold"
+    >
       {{ org?.title }} Settings
     </h1>
 

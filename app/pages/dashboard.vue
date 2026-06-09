@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { Org } from '~/types/api'
 
-const { data: orgs } = await useApiFetch<Org[]>(
+const { data: orgs, status } = useApiFetch<Org[]>(
   '/v1/orgs',
-  { method: 'GET', default: () => [] }
+  { method: 'GET', lazy: true, default: () => [] }
 )
 </script>
 
@@ -24,8 +24,18 @@ const { data: orgs } = await useApiFetch<Org[]>(
     </template>
 
     <UScrollArea>
+      <div
+        v-if="status === 'pending'"
+        class="flex flex-col gap-4"
+      >
+        <LTSkeletonCard
+          v-for="i in 3"
+          :key="i"
+          :lines="2"
+        />
+      </div>
       <p
-        v-if="!orgs?.length"
+        v-else-if="!orgs?.length"
         class="text-sm text-neutral-500"
       >
         You are not a member of any organization yet.
