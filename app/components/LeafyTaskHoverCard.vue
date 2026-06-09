@@ -21,6 +21,16 @@ const loading = ref(false)
 const ancestors = ref<TaskSummary[]>([])
 const dependencies = ref<{ dep: TaskSummary, origins: TaskSummary[] }[]>([])
 
+// Anchor the card to the cursor position captured when the hover opened, so it
+// appears to the right of the mouse instead of next to a wide trigger row.
+const pointer = usePointerPosition()
+const anchor = ref<{ x: number, y: number } | null>(null)
+const reference = computed(() => {
+  if (!anchor.value) return undefined
+  const { x, y } = anchor.value
+  return { getBoundingClientRect: () => new DOMRect(x, y, 0, 0) }
+})
+
 // Walk the dependency tree following satisfied edges; a node with no satisfied
 // children is a frontier — keep it as an origin only when it is actionable. The
 // direct dependency itself is never listed as its own origin.
@@ -76,7 +86,10 @@ async function load() {
 }
 
 watch(open, (isOpen) => {
-  if (isOpen) load()
+  if (isOpen) {
+    anchor.value = { x: pointer.x, y: pointer.y }
+    load()
+  }
 })
 </script>
 
@@ -86,7 +99,8 @@ watch(open, (isOpen) => {
     mode="hover"
     :open-delay="300"
     :close-delay="150"
-    :content="{ side: 'right', align: 'start' }"
+    :reference="reference"
+    :content="{ side: 'right', align: 'start', sideOffset: 12 }"
   >
     <slot />
 
