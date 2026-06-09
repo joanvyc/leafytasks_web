@@ -116,6 +116,14 @@ function commentAndComplete() {
       </div>
     </div>
 
+    <LeafyTaskBreadcrumb
+      v-if="task"
+      :org-url-name="org_url_name"
+      :project-url-name="url_name"
+      :task-id="taskId"
+      :title="task.title"
+    />
+
     <h1
       v-if="task"
       class="text-3xl font-bold"
