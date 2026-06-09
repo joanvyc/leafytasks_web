@@ -71,6 +71,20 @@ export interface StatusUpdate {
   created_at?: string
 }
 
+export interface StatusPost {
+  task_id: number
+  task_title: string
+  status: TaskStatus
+  description: string
+  created_at: ApiDateTime
+  updated_at: ApiDateTime
+}
+
+export interface NewStatusPost {
+  status: TaskStatus
+  description: string
+}
+
 export interface DependableCandidate {
   id: string
   title: string

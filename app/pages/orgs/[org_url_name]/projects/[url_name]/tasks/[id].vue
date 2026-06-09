@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { ApiDateTime, DependableCandidate, StatusUpdate, TaskPriority, TaskStatus, TaskSummary } from '~/types/api'
+import type { ApiDateTime, DependableCandidate, NewStatusPost, StatusPost, TaskPriority, TaskStatus, TaskSummary } from '~/types/api'
 
 const route = useRoute()
 const org_url_name = route.params.org_url_name as string
 const url_name = route.params.url_name as string
 const taskId = route.params.id as string
 
-const { data: task, error } = await useApiFetch<TaskSummary>(
+const { data: task, error, refresh: refreshTask } = await useApiFetch<TaskSummary>(
   `/v1/orgs/${org_url_name}/projects/${url_name}/tasks/${taskId}`,
   { method: 'GET' }
 )
@@ -28,10 +28,10 @@ const { data: dependencies } = await useApiFetch<TaskSummary[]>(
 )
 
 const recursive = ref(false)
-const status_updates = ref<StatusUpdate[]>([
-  { status: 'todo', description: 'Task created.', author: 'Alice Example', created_at: '2026-05-01' },
-  { status: 'wip', description: 'Started working on the implementation.', author: 'Alice Example', created_at: '2026-05-10' }
-])
+const { data: status_updates, refresh: refreshStatus } = await useApiFetch<StatusPost[]>(
+  `/v1/orgs/${org_url_name}/projects/${url_name}/tasks/${taskId}/status`,
+  { method: 'GET', query: { subtasks: recursive }, default: () => [] }
+)
 
 const dependencySearch = ref('')
 const dependencyCandidates = ref<DependableCandidate[]>([
@@ -72,27 +72,22 @@ const status_options: { label: string, value: TaskStatus }[] = [
 const next_comment_text = ref('')
 const next_status = ref<TaskStatus>(task.value?.status ?? 'todo')
 
-function postUpdate(status: TaskStatus) {
-  status_updates.value = [
-    ...status_updates.value,
-    {
-      status,
-      description: next_comment_text.value,
-      author: 'You',
-      created_at: new Date().toISOString().slice(0, 10)
-    }
-  ]
-  if (task.value) task.value.status = status
+async function postUpdate(status: TaskStatus) {
+  await $apiFetch(`/v1/orgs/${org_url_name}/projects/${url_name}/tasks/${taskId}/status`, {
+    method: 'POST',
+    body: { status, description: next_comment_text.value } satisfies NewStatusPost
+  })
   next_comment_text.value = ''
   next_status.value = status
+  await Promise.all([refreshStatus(), refreshTask()])
 }
 
 function comment() {
-  postUpdate(next_status.value)
+  return postUpdate(next_status.value)
 }
 
 function commentAndComplete() {
-  postUpdate('done')
+  return postUpdate('done')
 }
 </script>
 
@@ -175,11 +170,15 @@ function commentAndComplete() {
               :items="status_options"
               class="min-w-32"
             />
-            <UButton @click="comment">
+            <UButton
+              loading-auto
+              @click="comment"
+            >
               Comment
             </UButton>
             <UButton
               color="success"
+              loading-auto
               @click="commentAndComplete"
             >
               Comment and complete
@@ -196,17 +195,21 @@ function commentAndComplete() {
             :key="i"
             class="mt-4"
           >
-            <UUser
-              class="mb-2"
-              :name="update.author"
-              :avatar="{
-                src: 'https://gitlab.pm.bsc.es/uploads/-/system/user/avatar/216/avatar.png',
-                loading: 'lazy'
-              }"
-            />
             <UCard>
               <template #header>
-                <LTStatus :status="update.status" />
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-2">
+                    <LTStatus :status="update.status" />
+                    <ULink
+                      v-if="recursive"
+                      :to="`/orgs/${org_url_name}/projects/${url_name}/tasks/${update.task_id}`"
+                      class="text-sm font-medium"
+                    >
+                      {{ update.task_title }}
+                    </ULink>
+                  </div>
+                  <span class="text-xs text-neutral-500">{{ formatDate(update.created_at) }}</span>
+                </div>
               </template>
               <p class="text-sm">
                 {{ update.description }}
